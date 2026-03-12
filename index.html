@@ -11,7 +11,7 @@
         header { text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; }
         h1 { font-size: 1.5rem; color: #2c3e50; margin: 0; }
         h2 { font-size: 1rem; color: #7f8c8d; margin: 5px 0 0 0; }
-        h3 { color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h3 { color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 20px;}
         
         label { font-weight: bold; font-size: 0.9rem; color: #2c3e50; display: block; margin-top: 10px; }
         select, input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #fdfdfd; }
@@ -30,6 +30,10 @@
         .blocco-immobile { border: 2px solid #ecf0f1; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 8px; }
         .blocco-terreno { border: 2px solid #27ae60; padding: 15px; margin-bottom: 15px; background: #eafaf1; border-radius: 8px; }
         
+        /* BOX GUIDA INFORMATIVI */
+        .box-guida { background: #e3f2fd; border-left: 4px solid #3498db; padding: 10px; margin-top: 15px; margin-bottom: 5px; font-size: 0.85rem; color: #2c3e50; border-radius: 0 6px 6px 0; line-height: 1.4; }
+        .box-guida strong { color: #2980b9; }
+
         .wizard-step { display: none; }
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
@@ -42,6 +46,7 @@
             .app-container { box-shadow: none; border: none; padding: 0; }
             button { display: none !important; }
             input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; }
+            .box-guida { display: none !important; } /* Nasconde le guide in stampa */
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
@@ -73,18 +78,28 @@
             <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi" autocomplete="off">
         </div>
         
-        <label>Tipologia Venditore / Regime Fiscale:</label>
+        <div class="box-guida">
+            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em> la tassazione avverrà sempre sul PREZZO di cessione (niente Prezzo-Valore) e le agevolazioni "Prima Casa" non saranno applicabili.
+        </div>
+        <label>Tipologia ACQUIRENTE:</label>
+        <select id="tipoAcquirente" autocomplete="off" onchange="aggiornaStatoAcquirente()">
+            <option value="privato">Persona Fisica (Privato)</option>
+            <option value="societa">Società, Ente o Uso Professionale (Partita IVA)</option>
+        </select>
+
+        <div class="box-guida">
+            💡 <strong>Guida Venditore:</strong> Attenzione agli immobili strumentali (Uffici, Negozi). Se venduti da <em>qualsiasi Impresa</em> (costruttrice o meno, con IVA o esenti), sconteranno un'imposta di Registro fissa (200€) e una pesante imposta ipocatastale proporzionale (3% + 1%).
+        </div>
+        <label>Tipologia VENDITORE / Regime Fiscale:</label>
         <select id="regimeFiscale" autocomplete="off">
-            <option value="registro">1. Privato o Società non costruttrice (Imposta di Registro)</option>
-            <option value="iva_agevolata">2. Impresa Costruttrice - Entro 5 anni (Soggetta ad IVA)</option>
-            <option value="registro">3. Impresa Cost. - Oltre 5 anni SENZA opzione (Registro)</option>
-            <option value="iva_agevolata">4. Impresa Cost. - Oltre 5 anni CON opzione (Soggetta ad IVA)</option>
+            <option value="registro_privato">1. Privato (Imposta di Registro)</option>
+            <option value="registro_impresa">2. Impresa non costruttrice o Costruttrice OLTRE 5 anni SENZA opzione (Esente IVA)</option>
+            <option value="iva_impresa">3. Impresa Costruttrice ENTRO 5 anni o OLTRE 5 anni CON opzione (Soggetta ad IVA)</option>
         </select>
 
         <div class="toggle-container">
             <input type="checkbox" id="condizioneSospensiva" autocomplete="off">
             <label for="condizioneSospensiva">Atto sottoposto a Condizione Sospensiva</label>
-            <span class="tooltip" title="Ai sensi dell'Art. 27 DPR 131/86: applica imposta di registro fissa 200€, bollo 155€ e formalità 235€ (tra privati).">i</span>
         </div>
 
         <button type="button" onclick="vaiAlloStep(2)">Avanti ➔</button>
@@ -96,7 +111,7 @@
         <div id="contenitoreImmobili"></div>
 
         <div class="flex-buttons" style="margin-top: 0;">
-            <button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Aggiungi Casa/Pertinenza</button>
+            <button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Aggiungi Fabbricato/Pertinenza</button>
             <button type="button" class="secondary" onclick="aggiungiTerreno()" style="background: #27ae60;">+ Aggiungi Terreno</button>
         </div>
 
@@ -156,46 +171,32 @@
     ];
 
     const numberFormatter = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    function formatEuro(num) {
-        return "€ " + numberFormatter.format(num);
-    }
+    function formatEuro(num) { return "€ " + numberFormatter.format(num); }
 
-    // --- CARICAMENTO MEMORIA E SVUOTAMENTO FORZATO ---
+    // --- INIZIALIZZAZIONE E MEMORIA LOCALE ---
     window.onload = function() {
-        // 1. Ripristina il nome impiegato dalla memoria sicura
         const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
-        if (impiegatoSalvato) {
-            document.getElementById('nomeImpiegato').value = impiegatoSalvato;
-        }
+        if (impiegatoSalvato) { document.getElementById('nomeImpiegato').value = impiegatoSalvato; }
 
-        // 2. Forza lo svuotamento degli altri campi (Combatte l'autocompletamento di Safari)
         const nomePraticaInput = document.getElementById('nomePratica');
         if (nomePraticaInput) nomePraticaInput.value = '';
-        
         const condSospensivaCheckbox = document.getElementById('condizioneSospensiva');
         if (condSospensivaCheckbox) condSospensivaCheckbox.checked = false;
         
         const regimeFiscaleSelect = document.getElementById('regimeFiscale');
         if (regimeFiscaleSelect) regimeFiscaleSelect.selectedIndex = 0;
+        const tipoAcquirenteSelect = document.getElementById('tipoAcquirente');
+        if (tipoAcquirenteSelect) tipoAcquirenteSelect.selectedIndex = 0;
     };
 
-    function salvaImpiegato(nome) {
-        localStorage.setItem('nomeImpiegatoPWA', nome);
-    }
+    function salvaImpiegato(nome) { localStorage.setItem('nomeImpiegatoPWA', nome); }
 
-    // --- FUNZIONI DI BASE E FORMATTAZIONE ---
     function vaiAlloStep(numeroStep) {
         const steps = document.querySelectorAll('.wizard-step');
-        for (let i = 0; i < steps.length; i++) {
-            steps[i].style.display = 'none';
-        }
+        for (let i = 0; i < steps.length; i++) { steps[i].style.display = 'none'; }
         document.getElementById('step' + numeroStep).style.display = 'block';
-
-        if (numeroStep === 3) {
-            document.getElementById('headerPrincipale').style.display = 'none';
-        } else {
-            document.getElementById('headerPrincipale').style.display = 'block';
-        }
+        if (numeroStep === 3) { document.getElementById('headerPrincipale').style.display = 'none'; } 
+        else { document.getElementById('headerPrincipale').style.display = 'block'; }
     }
 
     function formattaValuta(inputElement) {
@@ -208,54 +209,47 @@
     function formattaDecimale(inputElement) {
         let valStr = inputElement.value.replace(/\./g, "").replace(",", ".");
         let val = parseFloat(valStr) || 0;
+        if (val === 0 && inputElement.id === "onorarioLibero") { inputElement.value = ""; } 
+        else if (val > 0) { inputElement.value = numberFormatter.format(val); }
+    }
+
+    // --- CONTROLLI LOGICI IN TEMPO REALE ---
+    function aggiornaStatoAcquirente() {
+        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa';
+        const checkboxAgevolazioni = document.querySelectorAll('.check-agevolazione');
         
-        if (val === 0 && inputElement.id === "onorarioLibero") {
-            inputElement.value = ""; 
-        } else if (val > 0) {
-            inputElement.value = numberFormatter.format(val);
-        }
+        checkboxAgevolazioni.forEach(chk => {
+            if (isSocieta) {
+                chk.checked = false;
+                chk.disabled = true;
+                chk.parentElement.style.opacity = "0.5";
+            } else {
+                // Riattiva solo se l'immobile non è di lusso o strumentale
+                const blocco = chk.closest('.blocco-immobile');
+                const cat = blocco.querySelector('.cat-catastale').value;
+                if(cat !== 'A1' && cat !== 'A10' && cat !== 'C1') {
+                    chk.disabled = false;
+                    chk.parentElement.style.opacity = "1";
+                }
+            }
+        });
     }
 
-    // --- FUNZIONI DI AVVISO ---
-    function lanciaAvvisoPertinenzaLusso() {
-        alert("⚠️ AVVISO CONSAPEVOLEZZA:\nHai selezionato un'agevolazione per una pertinenza, ma nell'atto è presente un immobile di lusso (A/1).\n\nRicorda: la pertinenza NON può essere agevolata se è al servizio dell'A/1. Può esserlo SOLO se la stai acquistando come pertinenza di un'ALTRA abitazione (Prima Casa) che il cliente possiede già.\n\nSe è questo il caso, procedi pure.");
-    }
-
-    function bloccaLusso(selectElement) {
+    function bloccaNonAgevolabili(selectElement) {
         const blocco = selectElement.parentElement;
         const checkboxAgevolazione = blocco.querySelector('.check-agevolazione');
+        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa';
+        const categoria = selectElement.value;
         
-        if (selectElement.value === 'A1') {
+        const isLussoStrumentale = (categoria === 'A1' || categoria === 'A10' || categoria === 'C1');
+        
+        if (isLussoStrumentale || isSocieta) {
             checkboxAgevolazione.checked = false;
             checkboxAgevolazione.disabled = true;
-            
-            let pertinenzeAttive = false;
-            const tuttiBlocchi = document.querySelectorAll('.blocco-immobile');
-            for (let i = 0; i < tuttiBlocchi.length; i++) {
-                if (tuttiBlocchi[i] === blocco) continue;
-                const c = tuttiBlocchi[i].querySelector('.cat-catastale').value;
-                const a = tuttiBlocchi[i].querySelector('.check-agevolazione').checked;
-                if (a && (c === 'C2' || c === 'C6' || c === 'C7')) pertinenzeAttive = true;
-            }
-            if (pertinenzeAttive) lanciaAvvisoPertinenzaLusso();
+            checkboxAgevolazione.parentElement.style.opacity = "0.5";
         } else {
             checkboxAgevolazione.disabled = false;
-        }
-    }
-
-    function controllaSpuntaPertinenza(checkbox) {
-        if (!checkbox.checked) return;
-        const blocco = checkbox.closest('.blocco-immobile');
-        const categoria = blocco.querySelector('.cat-catastale').value;
-        const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
-        
-        if (isPertinenza) {
-            let haLusso = false;
-            const selectors = document.querySelectorAll('.cat-catastale');
-            for (let i = 0; i < selectors.length; i++) {
-                if (selectors[i].value === 'A1') haLusso = true;
-            }
-            if (haLusso) lanciaAvvisoPertinenzaLusso();
+            checkboxAgevolazione.parentElement.style.opacity = "1";
         }
     }
 
@@ -267,15 +261,19 @@
         const blocco = document.createElement('div');
         blocco.className = 'blocco-immobile';
         blocco.innerHTML = `
-            <h4 style="margin-top: 0; color: #2c3e50;">Immobile/Pertinenza #${contatoreImmobili} 
+            <h4 style="margin-top: 0; color: #2c3e50;">Fabbricato/Pertinenza #${contatoreImmobili} 
                 <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X Rimuovi</button>
             </h4>
             <label>Categoria Catastale:</label>
-            <select class="cat-catastale" onchange="bloccaLusso(this)">
+            <select class="cat-catastale" onchange="bloccaNonAgevolabili(this)">
                 <optgroup label="Abitativi">
                     <option value="A2">A/2 - Abitazione di tipo civile</option>
                     <option value="A3">A/3 - Abitazione di tipo economico</option>
                     <option value="A1">A/1 - Abitazione di tipo signorile (Lusso)</option>
+                </optgroup>
+                <optgroup label="Strumentali">
+                    <option value="C1">C/1 - Negozio / Locale Commerciale</option>
+                    <option value="A10">A/10 - Ufficio / Studio Privato</option>
                 </optgroup>
                 <optgroup label="Pertinenze">
                     <option value="C2">C/2 - Cantina / Magazzino</option>
@@ -284,7 +282,7 @@
                 </optgroup>
             </select>
             <div class="toggle-container" style="padding: 10px; margin-top: 5px;">
-                <input type="checkbox" id="agevolazione_${contatoreImmobili}" class="check-agevolazione" onchange="controllaSpuntaPertinenza(this)">
+                <input type="checkbox" id="agevolazione_${contatoreImmobili}" class="check-agevolazione">
                 <label for="agevolazione_${contatoreImmobili}" style="font-weight: bold; color: #2980b9;">Richiesta Agevolazione Prima Casa</label>
             </div>
             <label>Rendita Catastale (€):</label>
@@ -293,6 +291,7 @@
             <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
+        aggiornaStatoAcquirente(); // Applica subito la disattivazione se è società
     }
 
     let contatoreTerreni = 0;
@@ -331,50 +330,33 @@
         contenitore.appendChild(riga);
     }
 
-    // --- CONTROLLO ERRORI E AVVIO CALCOLO ---
+    // --- MOTORE DI CALCOLO 3D (Venditore, Acquirente, Oggetto) ---
     function avviaCalcoloPreventivo() {
-        const regimeFiscale = document.getElementById('regimeFiscale').value;
+        const regimeVenditore = document.getElementById('regimeFiscale').value;
+        const tipoAcquirente = document.getElementById('tipoAcquirente').value;
         const isCondizionata = document.getElementById('condizioneSospensiva').checked;
         const blocchiImmobili = document.querySelectorAll('.blocco-immobile');
         const blocchiTerreni = document.querySelectorAll('.blocco-terreno');
         
         if (blocchiImmobili.length === 0 && blocchiTerreni.length === 0) {
-            alert("ATTENZIONE: Devi inserire almeno un immobile o un terreno per calcolare il preventivo.");
+            alert("ATTENZIONE: Inserisci almeno un immobile o terreno.");
             return;
         }
 
-        let conteggioPertinenze = { 'C2': 0, 'C6': 0, 'C7': 0 };
-        let erroreDoppiaPertinenza = false;
-
-        for (let i = 0; i < blocchiImmobili.length; i++) {
-            const blocco = blocchiImmobili[i];
-            const categoria = blocco.querySelector('.cat-catastale').value;
-            const isAgevolata = blocco.querySelector('.check-agevolazione').checked;
-            
-            if (isAgevolata && (categoria === 'C2' || categoria === 'C6' || categoria === 'C7')) {
-                conteggioPertinenze[categoria]++;
-                if (conteggioPertinenze[categoria] > 1) erroreDoppiaPertinenza = true;
-            }
-        }
-
-        if (erroreDoppiaPertinenza) {
-            alert("ERRORE FISCALE: Hai richiesto l'agevolazione Prima Casa su più di una pertinenza della stessa categoria. La legge lo vieta. Rimuovi la spunta per procedere.");
-            return; 
-        }
-
         vaiAlloStep(3);
-        eseguiMatematicaTasse(regimeFiscale, isCondizionata, blocchiImmobili, blocchiTerreni);
-    }
 
-    // --- MOTORE MATEMATICO ---
-    function eseguiMatematicaTasse(regimeFiscale, isCondizionata, blocchiImmobili, blocchiTerreni) {
         let totalePrezzo = 0;
         let totaleRegistroProporzionale = 0;
-        let totaleCatastalePPC = 0; 
         let haPrimaCasa = false; 
         let riepilogoHTML = "";
         let totaleIvaVenditore = 0;
 
+        // Variabili per l'eccezione Strumentali da Impresa
+        let flagStrumentaleDaImpresa = false;
+        let imponibileStrumentaliPerIpoCatastale = 0;
+        let totaleCatastalePPC = 0;
+
+        // FASE 1: CALCOLO FABBRICATI
         for (let i = 0; i < blocchiImmobili.length; i++) {
             const blocco = blocchiImmobili[i];
             const num = i + 1;
@@ -385,27 +367,63 @@
             const prezzo = parseFloat(blocco.querySelector('.prezzo-dichiarato').value.replace(/\./g, "").replace(",", ".")) || 0;
             
             totalePrezzo += prezzo;
+            const isStrumentale = (categoria === 'A10' || categoria === 'C1');
 
-            if (regimeFiscale === 'registro') {
-                let moltiplicatore = isAgevolata ? 115.5 : 126;
-                let aliquota = isAgevolata ? 0.02 : 0.09;
-                if (isAgevolata) haPrimaCasa = true;
+            // Logica applicazione Prezzo-Valore
+            // Posso usarlo SOLO se: Acquirente Privato + Vendita senza IVA + Non Strumentale
+            let usaPrezzoValore = false;
+            let baseImponibileRegistro = prezzo;
+            
+            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !isStrumentale) {
+                usaPrezzoValore = true;
+                const moltiplicatore = isAgevolata ? 115.5 : 126;
+                baseImponibileRegistro = rendita * moltiplicatore;
+            }
 
-                let valoreCatastale = rendita * moltiplicatore;
-                let impostaSingola = valoreCatastale * aliquota;
-                totaleRegistroProporzionale += impostaSingola;
+            if (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa') {
+                // ATTI ESENTI DA IVA (Soggetti a Registro)
+                let aliquota = 0.09;
+                if (isAgevolata) {
+                    aliquota = 0.02;
+                    haPrimaCasa = true;
+                }
 
-                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong>Fabbricato #${num} (${categoria})</strong> - Base imponibile: ${formatEuro(valoreCatastale)} <br>
-                    <span style="color: #7f8c8d;">(Rendita ${formatEuro(rendita)} x ${moltiplicatore}) -> Imposta ${isAgevolata ? '2%' : '9%'} pari a <strong>${formatEuro(impostaSingola)}</strong></span>
-                </div>`;
-            } else {
-                let aliquotaIva = isAgevolata ? 0.04 : 0.10; 
-                if (categoria === 'A1') aliquotaIva = 0.22;
-                if (isAgevolata) haPrimaCasa = true;
+                if (isStrumentale && regimeVenditore === 'registro_impresa') {
+                    // ECCEZIONE: Strumentale venduto da Impresa Esente
+                    // Registro fissa 200, ma accumulo il prezzo per l'Ipocatastale al 3%+1%
+                    flagStrumentaleDaImpresa = true;
+                    imponibileStrumentaliPerIpoCatastale += prezzo;
+                    
+                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                        <strong style="color: #e67e22;">Fabbricato #${num} (${categoria}) - STRUMENTALE</strong><br>
+                        Prezzo: ${formatEuro(prezzo)}. L'imposta di Registro sarà fissa, si applicheranno Ipotecaria al 3% e Catastale all'1% sul prezzo.
+                    </div>`;
+
+                } else {
+                    // Calcolo normale Registro
+                    let impostaSingola = baseImponibileRegistro * aliquota;
+                    totaleRegistroProporzionale += impostaSingola;
+
+                    let baseText = usaPrezzoValore ? `(Rendita ${formatEuro(rendita)} x ${isAgevolata?115.5:126})` : `(Sul Prezzo Dichiarato)`;
+                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                        <strong>Fabbricato #${num} (${categoria})</strong> - Base imponibile: ${formatEuro(baseImponibileRegistro)} <br>
+                        <span style="color: #7f8c8d;">${baseText} -> Imposta ${isAgevolata ? '2%' : '9%'} pari a <strong>${formatEuro(impostaSingola)}</strong></span>
+                    </div>`;
+                }
+
+            } else if (regimeVenditore === 'iva_impresa') {
+                // ATTI SOGGETTI AD IVA
+                let aliquotaIva = 0.10; 
+                if (isAgevolata) { aliquotaIva = 0.04; haPrimaCasa = true; }
+                if (categoria === 'A1' || isStrumentale) aliquotaIva = 0.22;
                 
                 let ivaSingola = prezzo * aliquotaIva;
                 totaleIvaVenditore += ivaSingola;
+
+                if (isStrumentale) {
+                    flagStrumentaleDaImpresa = true;
+                    imponibileStrumentaliPerIpoCatastale += prezzo;
+                }
 
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
                     <strong>Fabbricato #${num} (${categoria})</strong> - Prezzo: ${formatEuro(prezzo)} <br>
@@ -414,6 +432,7 @@
             }
         }
 
+        // FASE 2: CALCOLO TERRENI
         for (let i = 0; i < blocchiTerreni.length; i++) {
             const blocco = blocchiTerreni[i];
             const num = i + 1;
@@ -455,24 +474,52 @@
             }
         }
 
+        // FASE 3: IMPOSTE DI STATO FINALI (Assorbimento e Mimimi)
         let impostaRegistro = 0, impostaIpotecaria = 0, impostaCatastale = 0, impostaBollo = 0, tassaTrascrizione = 0;
 
-        if (isCondizionata && regimeFiscale === 'registro') {
+        if (isCondizionata && (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa')) {
             impostaRegistro = 200; impostaBollo = 155; tassaTrascrizione = 235;
-        } else if (regimeFiscale === 'registro') {
-            impostaRegistro = totaleRegistroProporzionale < 1000 ? 1000 : totaleRegistroProporzionale;
-            impostaIpotecaria = 50; impostaCatastale = 50;
+        } else {
+            
+            if (regimeVenditore === 'registro_privato') {
+                // Ordinario da Privati
+                impostaRegistro = totaleRegistroProporzionale < 1000 ? 1000 : totaleRegistroProporzionale;
+                impostaIpotecaria = 50; impostaCatastale = 50;
+            } else if (regimeVenditore === 'iva_impresa') {
+                // Ordinario con IVA su abitativi
+                impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = 200;
+                impostaBollo = 230; tassaTrascrizione = 90;
+            } else if (regimeVenditore === 'registro_impresa') {
+                // Ordinario esente da Impresa
+                impostaRegistro = totaleRegistroProporzionale < 1000 ? 1000 : totaleRegistroProporzionale;
+                impostaIpotecaria = 50; impostaCatastale = 50;
+                // Se c'erano SOLO strumentali, il registro proporzionale è zero, la legge lo alza alla fissa 200
+                if (totaleRegistroProporzionale === 0) impostaRegistro = 200; 
+            }
+
+            // SOVRASCRITTURE SPECIALI TERRENI PPC
             if (totaleCatastalePPC > 0) {
                 impostaCatastale = 50 + totaleCatastalePPC;
                 if (blocchiImmobili.length === 0 && totaleRegistroProporzionale === 0) {
                     impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = totaleCatastalePPC; 
                 }
             }
-        } else if (regimeFiscale === 'iva_agevolata') {
-            impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = 200;
-            impostaBollo = 230; tassaTrascrizione = 90;
+
+            // SOVRASCRITTURE SPECIALI STRUMENTALI DA IMPRESA (Il 3% e 1%)
+            if (flagStrumentaleDaImpresa) {
+                // Sostituisce la fissa o si somma se ci sono beni misti (la giurisprudenza preferisce sommare al minimo)
+                let extraIpo = imponibileStrumentaliPerIpoCatastale * 0.03;
+                let extraCata = imponibileStrumentaliPerIpoCatastale * 0.01;
+                // Se le imposte fisse erano 200 o 50, la legge sulle strumentali impone il proporzionale (min. 200)
+                impostaIpotecaria = extraIpo < 200 ? 200 : extraIpo;
+                impostaCatastale = extraCata < 200 ? 200 : extraCata;
+                
+                // Mantiene il registro a 200 (se l'atto conteneva solo lo strumentale)
+                if (totaleRegistroProporzionale === 0) impostaRegistro = 200;
+            }
         }
 
+        // FASE 4: SPESE EXTRA
         let totaleSpeseExtra = 0;
         let speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Altre Spese</td></tr>`;
         
@@ -488,6 +535,7 @@
             }
         }
 
+        // FASE 5: CALCOLO BASE TASSA ARCHIVIO
         const scaglione = PUB.find(x => totalePrezzo <= x.max) || PUB[PUB.length - 1];
         const colonna = haPrimaCasa ? "70%" : "100%"; 
         const onorarioRepertorio = scaglione.h[colonna] || 0;
