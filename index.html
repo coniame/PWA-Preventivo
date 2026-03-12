@@ -34,14 +34,20 @@
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
 
-        /* REGOLE DI STAMPA AVANZATE */
+        /* REGOLE DI STAMPA AVANZATE E CORRETTE */
         .linea-onorario-vuota, .linea-stampa-vuota { display: none; }
         @media print {
+            /* Forza le stampanti a stampare i riquadri colorati (es. il box blu scuro) */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
             .app-container { box-shadow: none; border: none; }
             button { display: none !important; }
             input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; }
             
-            /* Attivazione Stampa in Bianco se Onorario è 0 */
+            /* Attivazione Stampa in Bianco SOLO se Onorario è 0 */
             .onorario-vuoto #totaleFinaleBox {
                 background: #fff !important;
                 color: #000 !important;
@@ -163,7 +169,7 @@
         {max: Infinity, h:{"100%":1394, "70%":976, "50%":697, "25%":349}, c:0.42}
     ];
 
-    // --- NUOVA FORMATTAZIONE EURO (Simbolo a sinistra e migliaia con punto) ---
+    // --- NUOVA FORMATTAZIONE EURO ---
     const numberFormatter = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     function formatEuro(num) {
         return "€ " + numberFormatter.format(num);
@@ -461,7 +467,7 @@
             }
         }
 
-        // FASE 5: CALCOLO BASE TASSA ARCHIVIO (Per pre-compilare la casella)
+        // FASE 5: CALCOLO BASE TASSA ARCHIVIO
         const scaglione = PUB.find(x => totalePrezzo <= x.max) || PUB[PUB.length - 1];
         const colonna = haPrimaCasa ? "70%" : "100%"; 
         const onorarioRepertorio = scaglione.h[colonna] || 0;
@@ -475,7 +481,6 @@
         const ivaContributi = Math.round(baseIvaContributi * 0.22 * 100) / 100;
         const totaleContributiPrecalcolati = tassaArchivioNuda + baseIvaContributi + ivaContributi;
 
-        // Tasse fisse base escludendo l'Archivio (che ora è calcolato a parte dalla casella)
         const totaleImposteFisseBase = impostaRegistro + impostaIpotecaria + impostaCatastale + impostaBollo + tassaTrascrizione + totaleSpeseExtra;
 
         // FASE 6: STAMPA A VIDEO
@@ -515,14 +520,14 @@
             <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; border: 1px solid #3498db;">
                 <label style="color: #2980b9;">Onorario Notarile (IVA inclusa) (€):</label>
                 <div style="position: relative;">
-                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="font-size: 1.2rem; font-weight: bold; color: #2c3e50; width: 100%;" oninput="formattaValuta(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
+                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="font-size: 1.2rem; font-weight: bold; color: #2c3e50; width: 100%; text-align: right;" oninput="formattaValuta(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
                     <div class="linea-onorario-vuota"></div>
                 </div>
                 <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px;">Inserire l'onorario concordato, già comprensivo di IVA. Se lasciato a zero, in fase di stampa apparirà la linea da compilare a penna.</div>
             </div>
 
             <div id="totaleFinaleBox" style="text-align: right; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                <h2 id="totaleLabel" style="margin: 0; color: white; font-size: 1.4rem;">
+                <h2 style="margin: 0; color: white; font-size: 1.4rem;">
                     TOTALE DA VERSARE: 
                     <span id="valoreTotaleStampa" class="valore-totale-stampa">€ 0,00</span>
                     <span class="linea-stampa-vuota">_____________________</span>
@@ -557,10 +562,10 @@
         const totaleAssoluto = totaleTasseESpese + onorarioIvato;
         const ivaScorporata = onorarioIvato - (onorarioIvato / 1.22);
         
+        // CORREZIONE: Inserimento sicuro del testo per non sovrascrivere l'intero blocco HTML
         document.getElementById('valoreTotaleStampa').innerText = formatEuro(totaleAssoluto);
         document.getElementById('dettaglioIva').innerText = "di cui IVA 22% scorporata dall'onorario: " + formatEuro(ivaScorporata);
 
-        // Attivazione del "Trucco di Stampa" se Onorario è zero
         if (onorarioIvato === 0) {
             document.body.classList.add('onorario-vuoto');
         } else {
