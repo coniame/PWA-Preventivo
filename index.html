@@ -30,7 +30,6 @@
         .blocco-immobile { border: 2px solid #ecf0f1; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 8px; }
         .blocco-terreno { border: 2px solid #27ae60; padding: 15px; margin-bottom: 15px; background: #eafaf1; border-radius: 8px; }
         
-        /* BOX GUIDA INFORMATIVI */
         .box-guida { background: #e3f2fd; border-left: 4px solid #3498db; padding: 10px; margin-top: 15px; margin-bottom: 5px; font-size: 0.85rem; color: #2c3e50; border-radius: 0 6px 6px 0; line-height: 1.4; }
         .box-guida strong { color: #2980b9; }
 
@@ -46,7 +45,7 @@
             .app-container { box-shadow: none; border: none; padding: 0; }
             button { display: none !important; }
             input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; }
-            .box-guida { display: none !important; } /* Nasconde le guide in stampa */
+            .box-guida { display: none !important; } 
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
@@ -72,29 +71,29 @@
         <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffcc80; margin-bottom: 15px;">
             <label style="margin-top: 0;">Nome Impiegato:</label>
             <input type="text" id="nomeImpiegato" placeholder="Es. Mario Rossi" autocomplete="off" onchange="salvaImpiegato(this.value)">
-            <div style="font-size: 0.75rem; color: #e67e22; margin-top: 5px;">Il nome verrà memorizzato automaticamente su questo dispositivo.</div>
+            <div style="font-size: 0.75rem; color: #e67e22; margin-top: 5px;">Il nome verrà memorizzato automaticamente.</div>
             
             <label>Cliente / Nome Pratica:</label>
             <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi" autocomplete="off">
         </div>
         
         <div class="box-guida">
-            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em> la tassazione avverrà sempre sul PREZZO di cessione (niente Prezzo-Valore) e le agevolazioni "Prima Casa" non saranno applicabili.
+            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em> la tassazione avverrà sul PREZZO e le agevolazioni "Prima Casa" non saranno applicabili.
         </div>
         <label>Tipologia ACQUIRENTE:</label>
         <select id="tipoAcquirente" autocomplete="off" onchange="aggiornaStatoAcquirente()">
             <option value="privato">Persona Fisica (Privato)</option>
-            <option value="societa">Società, Ente o Uso Professionale (Partita IVA)</option>
+            <option value="societa">Società, Ente o Uso Professionale</option>
         </select>
 
         <div class="box-guida">
-            💡 <strong>Guida Venditore:</strong> Attenzione agli immobili strumentali (Uffici, Negozi). Se venduti da <em>qualsiasi Impresa</em> (costruttrice o meno, con IVA o esenti), sconteranno un'imposta di Registro fissa (200€) e una pesante imposta ipocatastale proporzionale (3% + 1%).
+            💡 <strong>Guida Venditore:</strong> In base alla scelta, il calcolatore applicherà il Principio di Assorbimento o l'Alternatività IVA per il calcolo di Bollo e Trascrizione.
         </div>
         <label>Tipologia VENDITORE / Regime Fiscale:</label>
         <select id="regimeFiscale" autocomplete="off">
             <option value="registro_privato">1. Privato (Imposta di Registro)</option>
-            <option value="registro_impresa">2. Impresa non costruttrice o Costruttrice OLTRE 5 anni SENZA opzione (Esente IVA)</option>
-            <option value="iva_impresa">3. Impresa Costruttrice ENTRO 5 anni o OLTRE 5 anni CON opzione (Soggetta ad IVA)</option>
+            <option value="registro_impresa">2. Impresa non costruttrice o Costruttrice OLTRE 5 anni SENZA opz. (Esente)</option>
+            <option value="iva_impresa">3. Impresa Costruttrice ENTRO 5 anni o OLTRE 5 anni CON opz. (Soggetta ad IVA)</option>
         </select>
 
         <div class="toggle-container">
@@ -224,7 +223,6 @@
                 chk.disabled = true;
                 chk.parentElement.style.opacity = "0.5";
             } else {
-                // Riattiva solo se l'immobile non è di lusso o strumentale
                 const blocco = chk.closest('.blocco-immobile');
                 const cat = blocco.querySelector('.cat-catastale').value;
                 if(cat !== 'A1' && cat !== 'A10' && cat !== 'C1') {
@@ -250,6 +248,24 @@
         } else {
             checkboxAgevolazione.disabled = false;
             checkboxAgevolazione.parentElement.style.opacity = "1";
+        }
+    }
+
+    function controllaSpuntaPertinenza(checkbox) {
+        if (!checkbox.checked) return;
+        const blocco = checkbox.closest('.blocco-immobile');
+        const categoria = blocco.querySelector('.cat-catastale').value;
+        const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
+        
+        if (isPertinenza) {
+            let haLusso = false;
+            const selectors = document.querySelectorAll('.cat-catastale');
+            for (let i = 0; i < selectors.length; i++) {
+                if (selectors[i].value === 'A1') haLusso = true;
+            }
+            if (haLusso) {
+                alert("⚠️ AVVISO CONSAPEVOLEZZA:\nHai selezionato un'agevolazione per una pertinenza, ma nell'atto è presente un immobile di lusso (A/1).\n\nRicorda: la pertinenza NON può essere agevolata se è al servizio dell'A/1. Può esserlo SOLO se la stai acquistando come pertinenza di un'ALTRA abitazione (Prima Casa) che il cliente possiede già.\n\nSe è questo il caso, procedi pure.");
+            }
         }
     }
 
@@ -282,7 +298,7 @@
                 </optgroup>
             </select>
             <div class="toggle-container" style="padding: 10px; margin-top: 5px;">
-                <input type="checkbox" id="agevolazione_${contatoreImmobili}" class="check-agevolazione">
+                <input type="checkbox" id="agevolazione_${contatoreImmobili}" class="check-agevolazione" onchange="controllaSpuntaPertinenza(this)">
                 <label for="agevolazione_${contatoreImmobili}" style="font-weight: bold; color: #2980b9;">Richiesta Agevolazione Prima Casa</label>
             </div>
             <label>Rendita Catastale (€):</label>
@@ -291,7 +307,7 @@
             <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
-        aggiornaStatoAcquirente(); // Applica subito la disattivazione se è società
+        aggiornaStatoAcquirente(); 
     }
 
     let contatoreTerreni = 0;
@@ -330,7 +346,7 @@
         contenitore.appendChild(riga);
     }
 
-    // --- MOTORE DI CALCOLO 3D (Venditore, Acquirente, Oggetto) ---
+    // --- MOTORE DI CALCOLO 3D (REGOLE FERREE) ---
     function avviaCalcoloPreventivo() {
         const regimeVenditore = document.getElementById('regimeFiscale').value;
         const tipoAcquirente = document.getElementById('tipoAcquirente').value;
@@ -343,6 +359,25 @@
             return;
         }
 
+        let conteggioPertinenze = { 'C2': 0, 'C6': 0, 'C7': 0 };
+        let erroreDoppiaPertinenza = false;
+
+        for (let i = 0; i < blocchiImmobili.length; i++) {
+            const blocco = blocchiImmobili[i];
+            const categoria = blocco.querySelector('.cat-catastale').value;
+            const isAgevolata = blocco.querySelector('.check-agevolazione').checked;
+            
+            if (isAgevolata && (categoria === 'C2' || categoria === 'C6' || categoria === 'C7')) {
+                conteggioPertinenze[categoria]++;
+                if (conteggioPertinenze[categoria] > 1) erroreDoppiaPertinenza = true;
+            }
+        }
+
+        if (erroreDoppiaPertinenza) {
+            alert("ERRORE FISCALE: Hai richiesto l'agevolazione Prima Casa su più di una pertinenza della stessa categoria. La legge lo vieta. Rimuovi la spunta per procedere.");
+            return; 
+        }
+
         vaiAlloStep(3);
 
         let totalePrezzo = 0;
@@ -351,7 +386,6 @@
         let riepilogoHTML = "";
         let totaleIvaVenditore = 0;
 
-        // Variabili per l'eccezione Strumentali da Impresa
         let flagStrumentaleDaImpresa = false;
         let imponibileStrumentaliPerIpoCatastale = 0;
         let totaleCatastalePPC = 0;
@@ -369,8 +403,6 @@
             totalePrezzo += prezzo;
             const isStrumentale = (categoria === 'A10' || categoria === 'C1');
 
-            // Logica applicazione Prezzo-Valore
-            // Posso usarlo SOLO se: Acquirente Privato + Vendita senza IVA + Non Strumentale
             let usaPrezzoValore = false;
             let baseImponibileRegistro = prezzo;
             
@@ -381,26 +413,18 @@
             }
 
             if (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa') {
-                // ATTI ESENTI DA IVA (Soggetti a Registro)
                 let aliquota = 0.09;
-                if (isAgevolata) {
-                    aliquota = 0.02;
-                    haPrimaCasa = true;
-                }
+                if (isAgevolata) { aliquota = 0.02; haPrimaCasa = true; }
 
                 if (isStrumentale && regimeVenditore === 'registro_impresa') {
-                    // ECCEZIONE: Strumentale venduto da Impresa Esente
-                    // Registro fissa 200, ma accumulo il prezzo per l'Ipocatastale al 3%+1%
                     flagStrumentaleDaImpresa = true;
                     imponibileStrumentaliPerIpoCatastale += prezzo;
                     
                     riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
                         <strong style="color: #e67e22;">Fabbricato #${num} (${categoria}) - STRUMENTALE</strong><br>
-                        Prezzo: ${formatEuro(prezzo)}. L'imposta di Registro sarà fissa, si applicheranno Ipotecaria al 3% e Catastale all'1% sul prezzo.
+                        Prezzo: ${formatEuro(prezzo)}. Registro fisso, Ipotecaria 3% e Catastale 1% calcolate sul prezzo.
                     </div>`;
-
                 } else {
-                    // Calcolo normale Registro
                     let impostaSingola = baseImponibileRegistro * aliquota;
                     totaleRegistroProporzionale += impostaSingola;
 
@@ -412,7 +436,6 @@
                 }
 
             } else if (regimeVenditore === 'iva_impresa') {
-                // ATTI SOGGETTI AD IVA
                 let aliquotaIva = 0.10; 
                 if (isAgevolata) { aliquotaIva = 0.04; haPrimaCasa = true; }
                 if (categoria === 'A1' || isStrumentale) aliquotaIva = 0.22;
@@ -474,48 +497,69 @@
             }
         }
 
-        // FASE 3: IMPOSTE DI STATO FINALI (Assorbimento e Mimimi)
+        // FASE 3: IMPOSTE DI STATO FINALI (REGOLE FERREE)
         let impostaRegistro = 0, impostaIpotecaria = 0, impostaCatastale = 0, impostaBollo = 0, tassaTrascrizione = 0;
+        let hasPPC = (totaleCatastalePPC > 0);
 
-        if (isCondizionata && (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa')) {
-            impostaRegistro = 200; impostaBollo = 155; tassaTrascrizione = 235;
+        if (isCondizionata && regimeVenditore !== 'iva_impresa') {
+            impostaRegistro = 200;
+            impostaIpotecaria = 0; 
+            impostaCatastale = 0;
+            impostaBollo = 155;
+            tassaTrascrizione = 235; // Regola concordata per condizione sospensiva
         } else {
-            
-            if (regimeVenditore === 'registro_privato') {
-                // Ordinario da Privati
-                impostaRegistro = totaleRegistroProporzionale < 1000 ? 1000 : totaleRegistroProporzionale;
-                impostaIpotecaria = 50; impostaCatastale = 50;
-            } else if (regimeVenditore === 'iva_impresa') {
-                // Ordinario con IVA su abitativi
+            // Calcolo base Registro, Ipotecaria, Catastale
+            if (regimeVenditore === 'iva_impresa') {
                 impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = 200;
-                impostaBollo = 230; tassaTrascrizione = 90;
-            } else if (regimeVenditore === 'registro_impresa') {
-                // Ordinario esente da Impresa
+            } else {
                 impostaRegistro = totaleRegistroProporzionale < 1000 ? 1000 : totaleRegistroProporzionale;
                 impostaIpotecaria = 50; impostaCatastale = 50;
-                // Se c'erano SOLO strumentali, il registro proporzionale è zero, la legge lo alza alla fissa 200
-                if (totaleRegistroProporzionale === 0) impostaRegistro = 200; 
+                if (totaleRegistroProporzionale === 0) {
+                    impostaRegistro = 200; 
+                }
             }
 
-            // SOVRASCRITTURE SPECIALI TERRENI PPC
-            if (totaleCatastalePPC > 0) {
+            // Sovrascrittura Terreni PPC
+            if (hasPPC && regimeVenditore !== 'iva_impresa') {
                 impostaCatastale = 50 + totaleCatastalePPC;
                 if (blocchiImmobili.length === 0 && totaleRegistroProporzionale === 0) {
                     impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = totaleCatastalePPC; 
                 }
             }
 
-            // SOVRASCRITTURE SPECIALI STRUMENTALI DA IMPRESA (Il 3% e 1%)
+            // Sovrascrittura Strumentali
             if (flagStrumentaleDaImpresa) {
-                // Sostituisce la fissa o si somma se ci sono beni misti (la giurisprudenza preferisce sommare al minimo)
                 let extraIpo = imponibileStrumentaliPerIpoCatastale * 0.03;
                 let extraCata = imponibileStrumentaliPerIpoCatastale * 0.01;
-                // Se le imposte fisse erano 200 o 50, la legge sulle strumentali impone il proporzionale (min. 200)
                 impostaIpotecaria = extraIpo < 200 ? 200 : extraIpo;
                 impostaCatastale = extraCata < 200 ? 200 : extraCata;
                 
-                // Mantiene il registro a 200 (se l'atto conteneva solo lo strumentale)
-                if (totaleRegistroProporzionale === 0) impostaRegistro = 200;
+                if (regimeVenditore !== 'iva_impresa' && totaleRegistroProporzionale === 0) {
+                    impostaRegistro = 200;
+                }
+            }
+
+            // APPLICAZIONE REGOLE FERREE BOLLO E TRASCRIZIONE
+            if (regimeVenditore === 'iva_impresa') {
+                // Regola 2: L'IVA non assorbe mai il bollo
+                impostaBollo = 230;
+                tassaTrascrizione = 90;
+            } else {
+                if (totaleRegistroProporzionale > 0) {
+                    // Regola 1: Principio di Assorbimento (Il registro proporzionale azzera le formalità)
+                    impostaBollo = 0;
+                    tassaTrascrizione = 0;
+                } else {
+                    if (hasPPC && !flagStrumentaleDaImpresa) {
+                        // Regola 4: Esenzione totale per terreni PPC
+                        impostaBollo = 0;
+                        tassaTrascrizione = 0;
+                    } else {
+                        // Regola 3: Atto a Tassa Fissa (es. Ufficio da Impresa Esente)
+                        impostaBollo = 155;
+                        tassaTrascrizione = 90;
+                    }
+                }
             }
         }
 
