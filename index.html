@@ -34,57 +34,42 @@
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
 
-        /* REGOLE DI STAMPA AVANZATE E CORRETTE */
+        /* REGOLE DI STAMPA AVANZATE */
         .linea-onorario-vuota, .linea-stampa-vuota { display: none; }
         @media print {
-            /* Forza le stampanti a stampare i riquadri colorati (es. il box blu scuro) */
-            * {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            
-            .app-container { box-shadow: none; border: none; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .app-container { box-shadow: none; border: none; padding: 0; }
             button { display: none !important; }
             input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; }
             
-            /* Attivazione Stampa in Bianco SOLO se Onorario è 0 */
-            .onorario-vuoto #totaleFinaleBox {
-                background: #fff !important;
-                color: #000 !important;
-                border: 2px solid #000 !important;
-            }
-            .onorario-vuoto #totaleLabel, .onorario-vuoto #dettaglioIva {
-                color: #000 !important;
-            }
-            .onorario-vuoto .input-onorario-stampa {
-                display: none !important;
-            }
-            .onorario-vuoto .linea-onorario-vuota {
-                display: block !important;
-                border-bottom: 1px solid #000;
-                margin-top: 25px;
-                width: 100%;
-                height: 10px;
-            }
-            .onorario-vuoto .valore-totale-stampa {
-                display: none !important;
-            }
-            .onorario-vuoto .linea-stampa-vuota {
-                display: inline-block !important;
-            }
+            .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
+            .onorario-vuoto #totaleLabel, .onorario-vuoto #dettaglioIva { color: #000 !important; }
+            .onorario-vuoto .input-onorario-stampa { display: none !important; }
+            .onorario-vuoto .linea-onorario-vuota { display: block !important; border-bottom: 1px solid #000; margin-top: 25px; width: 100%; height: 10px; }
+            .onorario-vuoto .valore-totale-stampa { display: none !important; }
+            .onorario-vuoto .linea-stampa-vuota { display: inline-block !important; }
         }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-    <header>
+    <header id="headerPrincipale">
         <h1>NUOVO PREVENTIVO</h1>
         <h2>Calcolo Imposte e Competenze</h2>
     </header>
 
     <section id="step1" class="wizard-step">
         <h3>Fase 1: Impostazioni della Pratica</h3>
+
+        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffcc80; margin-bottom: 15px;">
+            <label style="margin-top: 0;">Nome Impiegato:</label>
+            <input type="text" id="nomeImpiegato" placeholder="Es. Mario Rossi" onchange="salvaImpiegato(this.value)">
+            <div style="font-size: 0.75rem; color: #e67e22; margin-top: 5px;">Il nome verrà memorizzato automaticamente su questo dispositivo.</div>
+            
+            <label>Cliente / Nome Pratica:</label>
+            <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi">
+        </div>
         
         <label>Tipologia Venditore / Regime Fiscale:</label>
         <select id="regimeFiscale">
@@ -93,7 +78,6 @@
             <option value="registro">3. Impresa Cost. - Oltre 5 anni SENZA opzione (Registro)</option>
             <option value="iva_agevolata">4. Impresa Cost. - Oltre 5 anni CON opzione (Soggetta ad IVA)</option>
         </select>
-        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">Scegliendo IVA, verranno applicate imposte fisse, bollo e trascrizione maggiorati.</div>
 
         <div class="toggle-container">
             <input type="checkbox" id="condizioneSospensiva">
@@ -119,7 +103,7 @@
             <div id="contenitoreSpeseExtra">
                 <div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px;">
                     <input type="text" class="nome-spesa" value="Spese Visure e Ispezioni" style="flex: 2;">
-                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1;" oninput="formattaValuta(this)">
+                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
                 </div>
             </div>
             <button type="button" class="secondary" onclick="aggiungiSpesaExtra()" style="padding: 8px; font-size: 0.9rem;">+ Aggiungi altra spesa</button>
@@ -169,26 +153,57 @@
         {max: Infinity, h:{"100%":1394, "70%":976, "50%":697, "25%":349}, c:0.42}
     ];
 
-    // --- NUOVA FORMATTAZIONE EURO ---
     const numberFormatter = new Intl.NumberFormat('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     function formatEuro(num) {
         return "€ " + numberFormatter.format(num);
     }
 
-    // --- FUNZIONI DI BASE ---
+    // --- CARICAMENTO MEMORIA LOCALE ---
+    window.onload = function() {
+        const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
+        if (impiegatoSalvato) {
+            document.getElementById('nomeImpiegato').value = impiegatoSalvato;
+        }
+    };
+
+    function salvaImpiegato(nome) {
+        localStorage.setItem('nomeImpiegatoPWA', nome);
+    }
+
+    // --- FUNZIONI DI BASE E FORMATTAZIONE ---
     function vaiAlloStep(numeroStep) {
         const steps = document.querySelectorAll('.wizard-step');
         for (let i = 0; i < steps.length; i++) {
             steps[i].style.display = 'none';
         }
         document.getElementById('step' + numeroStep).style.display = 'block';
+
+        // Nascondi l'header principale se siamo nel preventivo finale
+        if (numeroStep === 3) {
+            document.getElementById('headerPrincipale').style.display = 'none';
+        } else {
+            document.getElementById('headerPrincipale').style.display = 'block';
+        }
     }
 
+    // Durante la digitazione: mostra solo i punti delle migliaia
     function formattaValuta(inputElement) {
         let v = inputElement.value.replace(/[^\d,]/g, ""); 
         let pts = v.split(",");
         pts[0] = pts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
         inputElement.value = pts.join(",");
+    }
+
+    // Quando esci dal campo (onblur): inietta i decimali e allinea
+    function formattaDecimale(inputElement) {
+        let valStr = inputElement.value.replace(/\./g, "").replace(",", ".");
+        let val = parseFloat(valStr) || 0;
+        
+        if (val === 0 && inputElement.id === "onorarioLibero") {
+            inputElement.value = ""; // Lascia vuoto per permettere il trucco della stampa
+        } else if (val > 0) {
+            inputElement.value = numberFormatter.format(val);
+        }
     }
 
     // --- FUNZIONI DI AVVISO ---
@@ -263,9 +278,9 @@
                 <label for="agevolazione_${contatoreImmobili}" style="font-weight: bold; color: #2980b9;">Richiesta Agevolazione Prima Casa</label>
             </div>
             <label>Rendita Catastale (€):</label>
-            <input type="text" class="input-valuta rendita-catastale" placeholder="es. 500,00" oninput="formattaValuta(this)">
+            <input type="text" class="input-valuta rendita-catastale" placeholder="es. 500,00" style="text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             <label>Prezzo Dichiarato in Atto (€):</label>
-            <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" oninput="formattaValuta(this)">
+            <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
     }
@@ -288,7 +303,7 @@
                 <option value="edificabile_iva">Edificabile venduto da Impresa (Soggetto IVA 22%)</option>
             </select>
             <label>Prezzo Dichiarato in Atto / Valore (€):</label>
-            <input type="text" class="input-valuta prezzo-terreno" placeholder="es. 50.000" oninput="formattaValuta(this)">
+            <input type="text" class="input-valuta prezzo-terreno" placeholder="es. 50.000" style="text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
     }
@@ -300,7 +315,7 @@
         riga.style = "display: flex; gap: 10px; margin-bottom: 10px;";
         riga.innerHTML = `
             <input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;">
-            <input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1;" oninput="formattaValuta(this)">
+            <input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             <button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>
         `;
         contenitore.appendChild(riga);
@@ -350,7 +365,6 @@
         let riepilogoHTML = "";
         let totaleIvaVenditore = 0;
 
-        // FASE 1: CALCOLO IMMOBILI
         for (let i = 0; i < blocchiImmobili.length; i++) {
             const blocco = blocchiImmobili[i];
             const num = i + 1;
@@ -390,7 +404,6 @@
             }
         }
 
-        // FASE 2: CALCOLO TERRENI
         for (let i = 0; i < blocchiTerreni.length; i++) {
             const blocco = blocchiTerreni[i];
             const num = i + 1;
@@ -432,7 +445,6 @@
             }
         }
 
-        // FASE 3: IMPOSTE DI STATO
         let impostaRegistro = 0, impostaIpotecaria = 0, impostaCatastale = 0, impostaBollo = 0, tassaTrascrizione = 0;
 
         if (isCondizionata && regimeFiscale === 'registro') {
@@ -451,7 +463,6 @@
             impostaBollo = 230; tassaTrascrizione = 90;
         }
 
-        // FASE 4: SPESE EXTRA (Elencate singolarmente)
         let totaleSpeseExtra = 0;
         let speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Altre Spese</td></tr>`;
         
@@ -467,7 +478,6 @@
             }
         }
 
-        // FASE 5: CALCOLO BASE TASSA ARCHIVIO
         const scaglione = PUB.find(x => totalePrezzo <= x.max) || PUB[PUB.length - 1];
         const colonna = haPrimaCasa ? "70%" : "100%"; 
         const onorarioRepertorio = scaglione.h[colonna] || 0;
@@ -483,11 +493,26 @@
 
         const totaleImposteFisseBase = impostaRegistro + impostaIpotecaria + impostaCatastale + impostaBollo + tassaTrascrizione + totaleSpeseExtra;
 
-        // FASE 6: STAMPA A VIDEO
+        // Recupera i dati dell'intestazione personalizzata
+        const dataAttuale = new Date().toLocaleDateString('it-IT');
+        const impiegato = document.getElementById('nomeImpiegato').value || "Operatore";
+        const pratica = document.getElementById('nomePratica').value || "Senza riferimento";
+
+        // Imposta la grammatica della nota finale in base alla presenza di IVA
+        let notaBeneTesto = "";
+        if (totaleIvaVenditore > 0) {
+            notaBeneTesto = `<strong>NOTA BENE:</strong> Il prezzo dell'immobile di ${formatEuro(totalePrezzo)} e l'IVA di ${formatEuro(totaleIvaVenditore)} non sono inclusi nel totale e vanno bonificati al venditore.`;
+        } else {
+            notaBeneTesto = `<strong>NOTA BENE:</strong> Il prezzo dell'immobile di ${formatEuro(totalePrezzo)} non è incluso nel totale e va bonificato al venditore.`;
+        }
+
         document.getElementById('risultatoPreventivo').innerHTML = `
-            <h3>Riepilogo Preventivo</h3>
-            <h4 style="margin-top: 0; color: #2c3e50; font-size: 1.1rem;">Prezzo dichiarato in atto: ${formatEuro(totalePrezzo)}</h4>
-            
+            <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px;">
+                <h1 style="font-size: 1.8rem; color: #2c3e50; margin: 0;">PREVENTIVO</h1>
+                <h2 style="font-size: 1.1rem; color: #34495e; margin: 5px 0;">Cliente/Pratica: ${pratica}</h2>
+                <p style="font-size: 0.85rem; color: #7f8c8d; margin: 5px 0 0 0;">Effettuato in data: ${dataAttuale} da: ${impiegato}</p>
+            </div>
+
             <div style="background: #fafafa; padding: 10px; border: 1px solid #ddd; margin-bottom: 15px;">
                 ${riepilogoHTML}
             </div>
@@ -507,7 +532,7 @@
                         - Tassa Archivio <span class="tooltip" title="Calcolo su Onorario Repertorio di ${formatEuro(onorarioRepertorio)}. Puoi arrotondare o modificare manualmente questo importo.">i</span>
                     </td>
                     <td style="text-align: right;">
-                        <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${numberFormatter.format(totaleContributiPrecalcolati)}" oninput="formattaValuta(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
+                        <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${numberFormatter.format(totaleContributiPrecalcolati)}" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
                     </td>
                 </tr>
 
@@ -520,7 +545,7 @@
             <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; border: 1px solid #3498db;">
                 <label style="color: #2980b9;">Onorario Notarile (IVA inclusa) (€):</label>
                 <div style="position: relative;">
-                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="font-size: 1.2rem; font-weight: bold; color: #2c3e50; width: 100%; text-align: right;" oninput="formattaValuta(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
+                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="font-size: 1.2rem; font-weight: bold; color: #2c3e50; width: 100%; text-align: right !important;" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
                     <div class="linea-onorario-vuota"></div>
                 </div>
                 <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px;">Inserire l'onorario concordato, già comprensivo di IVA. Se lasciato a zero, in fase di stampa apparirà la linea da compilare a penna.</div>
@@ -536,7 +561,7 @@
             </div>
             
             <p style="font-size: 0.8rem; color: #e74c3c; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 15px;">
-                <strong>NOTA BENE:</strong> Il prezzo dell'immobile di ${formatEuro(totalePrezzo)} ${totaleIvaVenditore > 0 ? 'e l\'IVA di ' + formatEuro(totaleIvaVenditore) : ''} non sono inclusi nel totale e vanno bonificati al venditore.
+                ${notaBeneTesto}
             </p>
         `;
         
@@ -562,7 +587,6 @@
         const totaleAssoluto = totaleTasseESpese + onorarioIvato;
         const ivaScorporata = onorarioIvato - (onorarioIvato / 1.22);
         
-        // CORREZIONE: Inserimento sicuro del testo per non sovrascrivere l'intero blocco HTML
         document.getElementById('valoreTotaleStampa').innerText = formatEuro(totaleAssoluto);
         document.getElementById('dettaglioIva').innerText = "di cui IVA 22% scorporata dall'onorario: " + formatEuro(ivaScorporata);
 
