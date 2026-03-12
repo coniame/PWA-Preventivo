@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    
     <title>Preventivatore Notarile PWA</title>
     <style>
         /* GRAFICA DELL'APP */
@@ -32,6 +28,7 @@
         
         .tooltip { cursor: help; background: #f39c12; color: #fff; padding: 2px 6px; border-radius: 50%; font-size: 0.8rem; margin-left: 5px; }
         .blocco-immobile { border: 2px solid #ecf0f1; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 8px; }
+        .blocco-terreno { border: 2px solid #27ae60; padding: 15px; margin-bottom: 15px; background: #eafaf1; border-radius: 8px; }
         
         /* Navigazione */
         .wizard-step { display: none; }
@@ -52,10 +49,12 @@
         
         <label>Tipologia Venditore / Regime Fiscale:</label>
         <select id="regimeFiscale">
-            <option value="registro">Tra Privati / Impresa Esente (Imposta di Registro)</option>
-            <option value="iva_agevolata">Da Impresa Costruttrice (Soggetta ad IVA)</option>
+            <option value="registro">1. Privato o Società non costruttrice (Imposta di Registro)</option>
+            <option value="iva_agevolata">2. Impresa Costruttrice - Entro 5 anni (Soggetta ad IVA)</option>
+            <option value="registro">3. Impresa Cost. - Oltre 5 anni SENZA opzione (Registro)</option>
+            <option value="iva_agevolata">4. Impresa Cost. - Oltre 5 anni CON opzione (Soggetta ad IVA)</option>
         </select>
-        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">Seleziona IVA se vende il costruttore entro 5 anni o con opzione.</div>
+        <div style="font-size: 0.8rem; color: #666; margin-top: 5px;">Scegliendo IVA, verranno applicate imposte fisse, bollo e trascrizione maggiorati.</div>
 
         <div class="toggle-container">
             <input type="checkbox" id="condizioneSospensiva">
@@ -71,7 +70,10 @@
         
         <div id="contenitoreImmobili"></div>
 
-        <button type="button" class="secondary" onclick="aggiungiImmobile()">+ Aggiungi Immobile / Pertinenza</button>
+        <div class="flex-buttons" style="margin-top: 0;">
+            <button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Aggiungi Casa/Pertinenza</button>
+            <button type="button" class="secondary" onclick="aggiungiTerreno()" style="background: #27ae60;">+ Aggiungi Terreno</button>
+        </div>
 
         <div style="border-top: 2px solid #ecf0f1; margin-top: 20px; padding-top: 15px;">
             <label>Spese vive accessorie (Visure, APE, ecc.):</label>
@@ -130,7 +132,7 @@
 
     const fmt = new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' });
 
-    // --- FUNZIONI DI BASE (BLINDATE PER IOS) ---
+    // --- FUNZIONI DI BASE ---
     function vaiAlloStep(numeroStep) {
         const steps = document.querySelectorAll('.wizard-step');
         for (let i = 0; i < steps.length; i++) {
@@ -167,9 +169,7 @@
                 const a = tuttiBlocchi[i].querySelector('.check-agevolazione').checked;
                 if (a && (c === 'C2' || c === 'C6' || c === 'C7')) pertinenzeAttive = true;
             }
-            
             if (pertinenzeAttive) lanciaAvvisoPertinenzaLusso();
-            
         } else {
             checkboxAgevolazione.disabled = false;
         }
@@ -177,7 +177,6 @@
 
     function controllaSpuntaPertinenza(checkbox) {
         if (!checkbox.checked) return;
-        
         const blocco = checkbox.closest('.blocco-immobile');
         const categoria = blocco.querySelector('.cat-catastale').value;
         const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
@@ -202,7 +201,7 @@
         blocco.className = 'blocco-immobile';
         
         blocco.innerHTML = `
-            <h4 style="margin-top: 0; color: #2c3e50;">Immobile #${contatoreImmobili} 
+            <h4 style="margin-top: 0; color: #2c3e50;">Immobile/Pertinenza #${contatoreImmobili} 
                 <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X Rimuovi</button>
             </h4>
             
@@ -234,6 +233,34 @@
         contenitore.appendChild(blocco);
     }
 
+    // NUOVA FUNZIONE PER I TERRENI
+    let contatoreTerreni = 0;
+    
+    function aggiungiTerreno() {
+        contatoreTerreni++;
+        const contenitore = document.getElementById('contenitoreImmobili');
+        const blocco = document.createElement('div');
+        blocco.className = 'blocco-terreno';
+        
+        blocco.innerHTML = `
+            <h4 style="margin-top: 0; color: #27ae60;">Terreno #${contatoreTerreni} 
+                <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X Rimuovi</button>
+            </h4>
+            
+            <label>Tipologia e Regime Fiscale del Terreno:</label>
+            <select class="tipo-terreno">
+                <option value="agricolo_ord">Agricolo Ordinario (Imposta Registro 15%)</option>
+                <option value="agricolo_ppc">Agricolo Agevolato PPC/IAP (Imposta Catastale 1%)</option>
+                <option value="edificabile_privato">Edificabile venduto da Privato (Imposta Registro 9%)</option>
+                <option value="edificabile_iva">Edificabile venduto da Impresa (Soggetto IVA 22%)</option>
+            </select>
+
+            <label>Prezzo Dichiarato in Atto / Valore (€):</label>
+            <input type="text" class="input-valuta prezzo-terreno" placeholder="es. 50.000" oninput="formattaValuta(this)">
+        `;
+        contenitore.appendChild(blocco);
+    }
+
     function aggiungiSpesaExtra() {
         const contenitore = document.getElementById('contenitoreSpeseExtra');
         const riga = document.createElement('div');
@@ -252,9 +279,10 @@
         const regimeFiscale = document.getElementById('regimeFiscale').value;
         const isCondizionata = document.getElementById('condizioneSospensiva').checked;
         const blocchiImmobili = document.querySelectorAll('.blocco-immobile');
+        const blocchiTerreni = document.querySelectorAll('.blocco-terreno');
         
-        if (blocchiImmobili.length === 0) {
-            alert("ATTENZIONE: Devi inserire almeno un immobile per calcolare il preventivo.");
+        if (blocchiImmobili.length === 0 && blocchiTerreni.length === 0) {
+            alert("ATTENZIONE: Devi inserire almeno un immobile o un terreno per calcolare il preventivo.");
             return;
         }
 
@@ -262,8 +290,9 @@
         let erroreDoppiaPertinenza = false;
 
         for (let i = 0; i < blocchiImmobili.length; i++) {
-            const categoria = blocchiImmobili[i].querySelector('.cat-catastale').value;
-            const isAgevolata = blocchiImmobili[i].querySelector('.check-agevolazione').checked;
+            const blocco = blocchiImmobili[i];
+            const categoria = blocco.querySelector('.cat-catastale').value;
+            const isAgevolata = blocco.querySelector('.check-agevolazione').checked;
             
             if (isAgevolata && (categoria === 'C2' || categoria === 'C6' || categoria === 'C7')) {
                 conteggioPertinenze[categoria]++;
@@ -277,17 +306,19 @@
         }
 
         vaiAlloStep(3);
-        eseguiMatematicaTasse(regimeFiscale, isCondizionata, blocchiImmobili);
+        eseguiMatematicaTasse(regimeFiscale, isCondizionata, blocchiImmobili, blocchiTerreni);
     }
 
     // --- MOTORE MATEMATICO ---
-    function eseguiMatematicaTasse(regimeFiscale, isCondizionata, blocchiImmobili) {
+    function eseguiMatematicaTasse(regimeFiscale, isCondizionata, blocchiImmobili, blocchiTerreni) {
         let totalePrezzo = 0;
         let totaleRegistroProporzionale = 0;
+        let totaleCatastalePPC = 0; 
         let haPrimaCasa = false; 
         let riepilogoHTML = "";
         let totaleIvaVenditore = 0;
 
+        // FASE 1: CALCOLO IMMOBILI E PERTINENZE
         for (let i = 0; i < blocchiImmobili.length; i++) {
             const blocco = blocchiImmobili[i];
             const num = i + 1;
@@ -309,7 +340,7 @@
                 totaleRegistroProporzionale += impostaSingola;
 
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong>Immobile #${num} (${categoria})</strong> - Base imponibile: ${fmt.format(valoreCatastale)} <br>
+                    <strong>Fabbricato #${num} (${categoria})</strong> - Base imponibile: ${fmt.format(valoreCatastale)} <br>
                     <span style="color: #7f8c8d;">(Rendita ${fmt.format(rendita)} x ${moltiplicatore}) -> Imposta ${isAgevolata ? '2%' : '9%'} pari a <strong>${fmt.format(impostaSingola)}</strong></span>
                 </div>`;
             } else {
@@ -321,25 +352,80 @@
                 totaleIvaVenditore += ivaSingola;
 
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong>Immobile #${num} (${categoria})</strong> - Prezzo: ${fmt.format(prezzo)} <br>
+                    <strong>Fabbricato #${num} (${categoria})</strong> - Prezzo: ${fmt.format(prezzo)} <br>
                     <span style="color: #e74c3c; font-weight:bold;">(IVA al ${aliquotaIva * 100}%: ${fmt.format(ivaSingola)} - DA PAGARE AL VENDITORE)</span>
                 </div>`;
             }
         }
 
+        // FASE 2: CALCOLO TERRENI
+        for (let i = 0; i < blocchiTerreni.length; i++) {
+            const blocco = blocchiTerreni[i];
+            const num = i + 1;
+            const selectTipo = blocco.querySelector('.tipo-terreno');
+            const tipoValore = selectTipo.value;
+            const nomeTerreno = selectTipo.options[selectTipo.selectedIndex].text.split("(")[0].trim();
+            const prezzo = parseFloat(blocco.querySelector('.prezzo-terreno').value.replace(/\./g, "").replace(",", ".")) || 0;
+            
+            totalePrezzo += prezzo;
+
+            if (tipoValore === 'agricolo_ord') {
+                let impostaSingola = prezzo * 0.15;
+                totaleRegistroProporzionale += impostaSingola;
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Prezzo: ${fmt.format(prezzo)} <br>
+                    <span style="color: #7f8c8d;">Calcolo Imposta Registro 15% pari a <strong>${fmt.format(impostaSingola)}</strong></span>
+                </div>`;
+            } else if (tipoValore === 'agricolo_ppc') {
+                let impostaSingola = prezzo * 0.01;
+                totaleCatastalePPC += impostaSingola; // Aggiunge all'imposta catastale finale
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Prezzo: ${fmt.format(prezzo)} <br>
+                    <span style="color: #7f8c8d;">Calcolo Imposta Catastale 1% pari a <strong>${fmt.format(impostaSingola)}</strong></span>
+                </div>`;
+            } else if (tipoValore === 'edificabile_privato') {
+                let impostaSingola = prezzo * 0.09;
+                totaleRegistroProporzionale += impostaSingola;
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Prezzo: ${fmt.format(prezzo)} <br>
+                    <span style="color: #7f8c8d;">Calcolo Imposta Registro 9% pari a <strong>${fmt.format(impostaSingola)}</strong></span>
+                </div>`;
+            } else if (tipoValore === 'edificabile_iva') {
+                let ivaSingola = prezzo * 0.22;
+                totaleIvaVenditore += ivaSingola;
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Prezzo: ${fmt.format(prezzo)} <br>
+                    <span style="color: #e74c3c; font-weight:bold;">(IVA al 22%: ${fmt.format(ivaSingola)} - DA PAGARE AL VENDITORE)</span>
+                </div>`;
+            }
+        }
+
+        // FASE 3: IMPOSTE DI ATTO ASSORBITE O FISSE
         let impostaRegistro = 0, impostaIpotecaria = 0, impostaCatastale = 0, impostaBollo = 0, tassaTrascrizione = 0;
 
         if (isCondizionata && regimeFiscale === 'registro') {
             impostaRegistro = 200; impostaBollo = 155; tassaTrascrizione = 235;
         } else if (regimeFiscale === 'registro') {
+            // Il controllo del minimo di 1.000 euro si fa sulla somma di case (2/9%) e terreni (15/9%)
             impostaRegistro = totaleRegistroProporzionale < 1000 ? 1000 : totaleRegistroProporzionale;
-            impostaIpotecaria = 50; impostaCatastale = 50;
+            impostaIpotecaria = 50; 
+            impostaCatastale = 50;
+            // Se c'è un terreno PPC, aggiungo il suo 1% proporzionale alla base fissa di 50 euro
+            if (totaleCatastalePPC > 0) {
+                impostaCatastale = 50 + totaleCatastalePPC;
+                // Nota legale: se l'atto ha SOLO un terreno PPC, registro e ipotecaria salgono a 200.
+                if (blocchiImmobili.length === 0 && totaleRegistroProporzionale === 0) {
+                    impostaRegistro = 200;
+                    impostaIpotecaria = 200;
+                    impostaCatastale = totaleCatastalePPC; // Per il PPC puro la fissa catastale non c'è, c'è solo l'1%
+                }
+            }
         } else if (regimeFiscale === 'iva_agevolata') {
             impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = 200;
             impostaBollo = 230; tassaTrascrizione = 90;
         }
 
-        // --- GESTIONE SPESE EXTRA SINGOLE ---
+        // FASE 4: SPESE EXTRA
         let totaleSpeseExtra = 0;
         let speseExtraHTML = `<tr style="border-top: 2px solid #ccc; background-color: #f9f9f9;"><td colspan="2" style="padding: 8px 5px; font-weight: bold; font-size: 1.05rem; color: #2c3e50;">Spese Accessorie Esenti</td></tr>`;
         
@@ -355,6 +441,7 @@
             }
         }
 
+        // FASE 5: TASSA ARCHIVIO
         const scaglione = PUB.find(x => totalePrezzo <= x.max) || PUB[PUB.length - 1];
         const colonna = haPrimaCasa ? "70%" : "100%"; 
         const onorarioRepertorio = scaglione.h[colonna] || 0;
@@ -430,5 +517,4 @@
 </script>
 
 </body>
-
 </html>
