@@ -34,14 +34,7 @@
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
 
-        /* NUOVA LINEA ELEGANTE E CORRETTA PER LA STAMPA */
-        .linea-stampa-vuota {
-            display: none;
-            width: 150px;
-            border-bottom: 2px solid #000;
-            margin-left: 10px;
-        }
-
+        .linea-stampa-vuota { display: none; width: 150px; border-bottom: 2px solid #000; margin-left: 10px; }
         .linea-onorario-vuota { display: none; }
         
         @media print {
@@ -56,7 +49,6 @@
             .onorario-vuoto .input-onorario-stampa { display: none !important; }
             .onorario-vuoto .linea-onorario-vuota { display: block !important; border-bottom: 1px solid #000; margin-top: 25px; width: 100%; height: 10px; }
             .onorario-vuoto .valore-totale-stampa { display: none !important; }
-            /* Attiva la riga elegante */
             .onorario-vuoto .linea-stampa-vuota { display: inline-block !important; }
         }
     </style>
@@ -74,15 +66,15 @@
 
         <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffcc80; margin-bottom: 15px;">
             <label style="margin-top: 0;">Nome Impiegato:</label>
-            <input type="text" id="nomeImpiegato" placeholder="Es. Mario Rossi" onchange="salvaImpiegato(this.value)">
+            <input type="text" id="nomeImpiegato" placeholder="Es. Mario Rossi" autocomplete="off" onchange="salvaImpiegato(this.value)">
             <div style="font-size: 0.75rem; color: #e67e22; margin-top: 5px;">Il nome verrà memorizzato automaticamente su questo dispositivo.</div>
             
             <label>Cliente / Nome Pratica:</label>
-            <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi">
+            <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi" autocomplete="off">
         </div>
         
         <label>Tipologia Venditore / Regime Fiscale:</label>
-        <select id="regimeFiscale">
+        <select id="regimeFiscale" autocomplete="off">
             <option value="registro">1. Privato o Società non costruttrice (Imposta di Registro)</option>
             <option value="iva_agevolata">2. Impresa Costruttrice - Entro 5 anni (Soggetta ad IVA)</option>
             <option value="registro">3. Impresa Cost. - Oltre 5 anni SENZA opzione (Registro)</option>
@@ -90,7 +82,7 @@
         </select>
 
         <div class="toggle-container">
-            <input type="checkbox" id="condizioneSospensiva">
+            <input type="checkbox" id="condizioneSospensiva" autocomplete="off">
             <label for="condizioneSospensiva">Atto sottoposto a Condizione Sospensiva</label>
             <span class="tooltip" title="Ai sensi dell'Art. 27 DPR 131/86: applica imposta di registro fissa 200€, bollo 155€ e formalità 235€ (tra privati).">i</span>
         </div>
@@ -112,8 +104,8 @@
             <label>Spese vive accessorie (Visure, APE, ecc.):</label>
             <div id="contenitoreSpeseExtra">
                 <div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="nome-spesa" value="Spese Visure e Ispezioni" style="flex: 2;">
-                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+                    <input type="text" class="nome-spesa" value="Spese Visure e Ispezioni" style="flex: 2;" autocomplete="off">
+                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
                 </div>
             </div>
             <button type="button" class="secondary" onclick="aggiungiSpesaExtra()" style="padding: 8px; font-size: 0.9rem;">+ Aggiungi altra spesa</button>
@@ -168,12 +160,23 @@
         return "€ " + numberFormatter.format(num);
     }
 
-    // --- CARICAMENTO MEMORIA LOCALE ---
+    // --- CARICAMENTO MEMORIA E SVUOTAMENTO FORZATO ---
     window.onload = function() {
+        // 1. Ripristina il nome impiegato dalla memoria sicura
         const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
         if (impiegatoSalvato) {
             document.getElementById('nomeImpiegato').value = impiegatoSalvato;
         }
+
+        // 2. Forza lo svuotamento degli altri campi (Combatte l'autocompletamento di Safari)
+        const nomePraticaInput = document.getElementById('nomePratica');
+        if (nomePraticaInput) nomePraticaInput.value = '';
+        
+        const condSospensivaCheckbox = document.getElementById('condizioneSospensiva');
+        if (condSospensivaCheckbox) condSospensivaCheckbox.checked = false;
+        
+        const regimeFiscaleSelect = document.getElementById('regimeFiscale');
+        if (regimeFiscaleSelect) regimeFiscaleSelect.selectedIndex = 0;
     };
 
     function salvaImpiegato(nome) {
@@ -285,9 +288,9 @@
                 <label for="agevolazione_${contatoreImmobili}" style="font-weight: bold; color: #2980b9;">Richiesta Agevolazione Prima Casa</label>
             </div>
             <label>Rendita Catastale (€):</label>
-            <input type="text" class="input-valuta rendita-catastale" placeholder="es. 500,00" style="text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <input type="text" class="input-valuta rendita-catastale" placeholder="es. 500,00" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             <label>Prezzo Dichiarato in Atto (€):</label>
-            <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
     }
@@ -310,7 +313,7 @@
                 <option value="edificabile_iva">Edificabile venduto da Impresa (Soggetto IVA 22%)</option>
             </select>
             <label>Prezzo Dichiarato in Atto / Valore (€):</label>
-            <input type="text" class="input-valuta prezzo-terreno" placeholder="es. 50.000" style="text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <input type="text" class="input-valuta prezzo-terreno" placeholder="es. 50.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
     }
@@ -321,8 +324,8 @@
         riga.className = 'riga-spesa';
         riga.style = "display: flex; gap: 10px; margin-bottom: 10px;";
         riga.innerHTML = `
-            <input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;">
-            <input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;" autocomplete="off">
+            <input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             <button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>
         `;
         contenitore.appendChild(riga);
@@ -504,7 +507,6 @@
         const impiegato = document.getElementById('nomeImpiegato').value || "Operatore";
         const pratica = document.getElementById('nomePratica').value || "Senza riferimento";
 
-        // Costruzione dinamica e corretta del Nota Bene
         let notaBeneTesto = `<strong>NOTA BENE:</strong> Il preventivo è stato elaborato sulla base dei dati forniti e include le imposte di Stato, i contributi di legge e le competenze notarili.`;
         if (totaleIvaVenditore > 0) {
             notaBeneTesto += ` <span style="color: #e74c3c;">La presente compravendita sconta inoltre un'IVA di legge pari a <strong>${formatEuro(totaleIvaVenditore)}</strong> non inclusa in questo totale.</span>`;
@@ -536,7 +538,7 @@
                         - Tassa Archivio <span class="tooltip" title="Calcolo su Onorario Repertorio di ${formatEuro(onorarioRepertorio)}. Puoi arrotondare o modificare manualmente questo importo.">i</span>
                     </td>
                     <td style="text-align: right;">
-                        <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${numberFormatter.format(totaleContributiPrecalcolati)}" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
+                        <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${numberFormatter.format(totaleContributiPrecalcolati)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
                     </td>
                 </tr>
 
@@ -549,7 +551,7 @@
             <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; border: 1px solid #3498db;">
                 <label style="color: #2980b9;">Onorario Notarile (IVA inclusa) (€):</label>
                 <div style="position: relative;">
-                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="font-size: 1.2rem; font-weight: bold; color: #2c3e50; width: 100%; text-align: right !important;" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
+                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="font-size: 1.2rem; font-weight: bold; color: #2c3e50; width: 100%; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
                     <div class="linea-onorario-vuota"></div>
                 </div>
                 <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px;">Inserire l'onorario concordato, già comprensivo di IVA. Se lasciato a zero, in fase di stampa apparirà la linea da compilare a penna.</div>
