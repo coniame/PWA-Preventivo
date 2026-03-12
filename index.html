@@ -14,8 +14,9 @@
         h3 { color: #2980b9; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 20px;}
         
         label { font-weight: bold; font-size: 0.9rem; color: #2c3e50; display: block; margin-top: 10px; }
-        select, input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #fdfdfd; }
+        select, input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #fdfdfd; transition: all 0.3s; }
         select:focus, input[type="text"]:focus { border-color: #3498db; outline: none; box-shadow: 0 0 5px rgba(52, 152, 219, 0.3); }
+        input:disabled { background: #e0e0e0; color: #7f8c8d; cursor: not-allowed; border-color: #bdc3c7; }
         
         button { background: #3498db; color: white; border: none; padding: 12px 15px; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 15px; }
         button:hover { background: #2980b9; }
@@ -23,7 +24,7 @@
         button.secondary:hover { background: #7f8c8d; }
         button.danger { background: #e74c3c; width: auto; padding: 5px 10px; font-size: 0.8rem; float: right; margin-top: 0; }
         
-        .toggle-container { background: #e8f4f8; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #d6eaf8; }
+        .toggle-container { background: #e8f4f8; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #d6eaf8; transition: opacity 0.3s; }
         .toggle-container label { display: inline; margin-left: 10px; font-size: 1rem; cursor: pointer; }
         
         .tooltip { cursor: help; background: #f39c12; color: #fff; padding: 2px 6px; border-radius: 50%; font-size: 0.8rem; margin-left: 5px; }
@@ -78,7 +79,7 @@
         </div>
         
         <div class="box-guida">
-            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em> la tassazione avverrà sul PREZZO e le agevolazioni "Prima Casa" non saranno applicabili.
+            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em>, la legge vieta il Prezzo-Valore: il calcolatore disabiliterà automaticamente la richiesta di Rendita Catastale e di Prima Casa, calcolando le imposte solo sul Prezzo.
         </div>
         <label>Tipologia ACQUIRENTE:</label>
         <select id="tipoAcquirente" autocomplete="off" onchange="aggiornaStatoAcquirente()">
@@ -87,7 +88,7 @@
         </select>
 
         <div class="box-guida">
-            💡 <strong>Guida Venditore:</strong> In base alla scelta, il calcolatore applicherà il Principio di Assorbimento o l'Alternatività IVA per il calcolo di Bollo e Trascrizione.
+            💡 <strong>Guida Venditore:</strong> In base alla scelta, l'algoritmo applicherà il Principio di Assorbimento o l'Alternatività IVA per calcolare senza errori Bollo e Trascrizione.
         </div>
         <label>Tipologia VENDITORE / Regime Fiscale:</label>
         <select id="regimeFiscale" autocomplete="off">
@@ -110,7 +111,7 @@
         <div id="contenitoreImmobili"></div>
 
         <div class="flex-buttons" style="margin-top: 0;">
-            <button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Aggiungi Fabbricato/Pertinenza</button>
+            <button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Aggiungi Fabbricato/Cantiere</button>
             <button type="button" class="secondary" onclick="aggiungiTerreno()" style="background: #27ae60;">+ Aggiungi Terreno</button>
         </div>
 
@@ -142,7 +143,6 @@
 </div>
 
 <script>
-    // --- DATABASE STATALE ONORARI REPERTORIO ---
     const PUB = [
         {max: 37000, h:{"100%":275, "70%":193, "50%":138, "25%":69}, c:0.22},
         {max: 55800, h:{"100%":320, "70%":224, "50%":160, "25%":80}, c:0.42},
@@ -212,42 +212,47 @@
         else if (val > 0) { inputElement.value = numberFormatter.format(val); }
     }
 
-    // --- CONTROLLI LOGICI IN TEMPO REALE ---
+    // --- CONTROLLI LOGICI "ANTIPROIETTILE" ---
     function aggiornaStatoAcquirente() {
-        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa';
-        const checkboxAgevolazioni = document.querySelectorAll('.check-agevolazione');
-        
-        checkboxAgevolazioni.forEach(chk => {
-            if (isSocieta) {
-                chk.checked = false;
-                chk.disabled = true;
-                chk.parentElement.style.opacity = "0.5";
-            } else {
-                const blocco = chk.closest('.blocco-immobile');
-                const cat = blocco.querySelector('.cat-catastale').value;
-                if(cat !== 'A1' && cat !== 'A10' && cat !== 'C1') {
-                    chk.disabled = false;
-                    chk.parentElement.style.opacity = "1";
-                }
-            }
+        const blocchi = document.querySelectorAll('.blocco-immobile');
+        blocchi.forEach(blocco => {
+            const select = blocco.querySelector('.cat-catastale');
+            bloccaNonAgevolabili(select);
         });
     }
 
     function bloccaNonAgevolabili(selectElement) {
         const blocco = selectElement.parentElement;
         const checkboxAgevolazione = blocco.querySelector('.check-agevolazione');
+        const inputRendita = blocco.querySelector('.rendita-catastale');
         const isSocieta = document.getElementById('tipoAcquirente').value === 'societa';
         const categoria = selectElement.value;
         
-        const isLussoStrumentale = (categoria === 'A1' || categoria === 'A10' || categoria === 'C1');
+        // Categorie Speciali Aggiunte
+        const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8');
+        const isLusso = (categoria === 'A1');
+        const isInCostruzione = (categoria === 'F3' || categoria === 'F4');
         
-        if (isLussoStrumentale || isSocieta) {
+        // 1. Gestione Prima Casa
+        if (isLusso || isStrumentale || isSocieta) {
             checkboxAgevolazione.checked = false;
             checkboxAgevolazione.disabled = true;
             checkboxAgevolazione.parentElement.style.opacity = "0.5";
         } else {
             checkboxAgevolazione.disabled = false;
             checkboxAgevolazione.parentElement.style.opacity = "1";
+        }
+
+        // 2. Gestione Rendita Catastale (Disattivata per F/3, Strumentali e Società)
+        if (isStrumentale || isInCostruzione || isSocieta) {
+            inputRendita.disabled = true;
+            inputRendita.value = "";
+            inputRendita.placeholder = "Calcolo su Prezzo";
+            inputRendita.style.background = "#eeeeee";
+        } else {
+            inputRendita.disabled = false;
+            inputRendita.placeholder = "es. 500,00";
+            inputRendita.style.background = "#fdfdfd";
         }
     }
 
@@ -287,9 +292,18 @@
                     <option value="A3">A/3 - Abitazione di tipo economico</option>
                     <option value="A1">A/1 - Abitazione di tipo signorile (Lusso)</option>
                 </optgroup>
-                <optgroup label="Strumentali">
+                <optgroup label="Commerciali e Uffici">
                     <option value="C1">C/1 - Negozio / Locale Commerciale</option>
                     <option value="A10">A/10 - Ufficio / Studio Privato</option>
+                </optgroup>
+                <optgroup label="Industriali e Artigianali">
+                    <option value="C3">C/3 - Laboratori per arti e mestieri</option>
+                    <option value="D1">D/1 - Opifici / Capannoni industriali</option>
+                    <option value="D8">D/8 - Fabbricati commerciali grandi</option>
+                </optgroup>
+                <optgroup label="In Costruzione (Senza Rendita)">
+                    <option value="F3">F/3 - Fabbricato in corso di costruzione</option>
+                    <option value="F4">F/4 - Fabbricato in corso di definizione</option>
                 </optgroup>
                 <optgroup label="Pertinenze">
                     <option value="C2">C/2 - Cantina / Magazzino</option>
@@ -401,12 +415,14 @@
             const prezzo = parseFloat(blocco.querySelector('.prezzo-dichiarato').value.replace(/\./g, "").replace(",", ".")) || 0;
             
             totalePrezzo += prezzo;
-            const isStrumentale = (categoria === 'A10' || categoria === 'C1');
+            const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8');
+            const isInCostruzione = (categoria === 'F3' || categoria === 'F4');
 
             let usaPrezzoValore = false;
             let baseImponibileRegistro = prezzo;
             
-            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !isStrumentale) {
+            // Il Prezzo-Valore NON è consentito per Società, Strumentali e Categorie F (Senza Rendita)
+            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !isStrumentale && !isInCostruzione) {
                 usaPrezzoValore = true;
                 const moltiplicatore = isAgevolata ? 115.5 : 126;
                 baseImponibileRegistro = rendita * moltiplicatore;
@@ -428,7 +444,7 @@
                     let impostaSingola = baseImponibileRegistro * aliquota;
                     totaleRegistroProporzionale += impostaSingola;
 
-                    let baseText = usaPrezzoValore ? `(Rendita ${formatEuro(rendita)} x ${isAgevolata?115.5:126})` : `(Sul Prezzo Dichiarato)`;
+                    let baseText = usaPrezzoValore ? `(Rendita ${formatEuro(rendita)} x ${isAgevolata?115.5:126})` : `(Calcolo forzato sul Prezzo Dichiarato)`;
                     riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
                         <strong>Fabbricato #${num} (${categoria})</strong> - Base imponibile: ${formatEuro(baseImponibileRegistro)} <br>
                         <span style="color: #7f8c8d;">${baseText} -> Imposta ${isAgevolata ? '2%' : '9%'} pari a <strong>${formatEuro(impostaSingola)}</strong></span>
@@ -506,9 +522,8 @@
             impostaIpotecaria = 0; 
             impostaCatastale = 0;
             impostaBollo = 155;
-            tassaTrascrizione = 235; // Regola concordata per condizione sospensiva
+            tassaTrascrizione = 235; 
         } else {
-            // Calcolo base Registro, Ipotecaria, Catastale
             if (regimeVenditore === 'iva_impresa') {
                 impostaRegistro = 200; impostaIpotecaria = 200; impostaCatastale = 200;
             } else {
@@ -519,7 +534,6 @@
                 }
             }
 
-            // Sovrascrittura Terreni PPC
             if (hasPPC && regimeVenditore !== 'iva_impresa') {
                 impostaCatastale = 50 + totaleCatastalePPC;
                 if (blocchiImmobili.length === 0 && totaleRegistroProporzionale === 0) {
@@ -527,7 +541,6 @@
                 }
             }
 
-            // Sovrascrittura Strumentali
             if (flagStrumentaleDaImpresa) {
                 let extraIpo = imponibileStrumentaliPerIpoCatastale * 0.03;
                 let extraCata = imponibileStrumentaliPerIpoCatastale * 0.01;
@@ -541,21 +554,17 @@
 
             // APPLICAZIONE REGOLE FERREE BOLLO E TRASCRIZIONE
             if (regimeVenditore === 'iva_impresa') {
-                // Regola 2: L'IVA non assorbe mai il bollo
                 impostaBollo = 230;
                 tassaTrascrizione = 90;
             } else {
                 if (totaleRegistroProporzionale > 0) {
-                    // Regola 1: Principio di Assorbimento (Il registro proporzionale azzera le formalità)
                     impostaBollo = 0;
                     tassaTrascrizione = 0;
                 } else {
                     if (hasPPC && !flagStrumentaleDaImpresa) {
-                        // Regola 4: Esenzione totale per terreni PPC
                         impostaBollo = 0;
                         tassaTrascrizione = 0;
                     } else {
-                        // Regola 3: Atto a Tassa Fissa (es. Ufficio da Impresa Esente)
                         impostaBollo = 155;
                         tassaTrascrizione = 90;
                     }
@@ -604,6 +613,7 @@
             notaBeneTesto += ` <span style="color: #e74c3c;">La presente compravendita sconta inoltre un'IVA di legge pari a <strong>${formatEuro(totaleIvaVenditore)}</strong> non inclusa in questo totale.</span>`;
         }
 
+        // MODIFICA DELLA LABEL "Voce" in "Tasse ed Imposte"
         document.getElementById('risultatoPreventivo').innerHTML = `
             <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px;">
                 <h1 style="font-size: 1.8rem; color: #2c3e50; margin: 0;">PREVENTIVO</h1>
@@ -616,7 +626,7 @@
             </div>
 
             <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
-                <tr style="border-bottom: 2px solid #333;"><th>Voce</th><th style="text-align: right;">Importo</th></tr>
+                <tr style="border-bottom: 2px solid #333;"><th>Tasse ed Imposte</th><th style="text-align: right;">Importo</th></tr>
                 <tr><td style="padding: 5px 0;">Imposta di Registro</td><td style="text-align: right; font-weight: bold;">${formatEuro(impostaRegistro)}</td></tr>
                 <tr><td style="padding: 5px 0;">Imposta Ipotecaria</td><td style="text-align: right;">${formatEuro(impostaIpotecaria)}</td></tr>
                 <tr><td style="padding: 5px 0;">Imposta Catastale</td><td style="text-align: right;">${formatEuro(impostaCatastale)}</td></tr>
