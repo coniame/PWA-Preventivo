@@ -34,8 +34,16 @@
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
 
-        /* REGOLE DI STAMPA AVANZATE */
-        .linea-onorario-vuota, .linea-stampa-vuota { display: none; }
+        /* NUOVA LINEA ELEGANTE E CORRETTA PER LA STAMPA */
+        .linea-stampa-vuota {
+            display: none;
+            width: 150px;
+            border-bottom: 2px solid #000;
+            margin-left: 10px;
+        }
+
+        .linea-onorario-vuota { display: none; }
+        
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .app-container { box-shadow: none; border: none; padding: 0; }
@@ -43,10 +51,12 @@
             input[type="text"] { border: none !important; background: transparent !important; padding: 0 !important; }
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
-            .onorario-vuoto #totaleLabel, .onorario-vuoto #dettaglioIva { color: #000 !important; }
+            .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
+            .onorario-vuoto #dettaglioIva { color: #000 !important; }
             .onorario-vuoto .input-onorario-stampa { display: none !important; }
             .onorario-vuoto .linea-onorario-vuota { display: block !important; border-bottom: 1px solid #000; margin-top: 25px; width: 100%; height: 10px; }
             .onorario-vuoto .valore-totale-stampa { display: none !important; }
+            /* Attiva la riga elegante */
             .onorario-vuoto .linea-stampa-vuota { display: inline-block !important; }
         }
     </style>
@@ -178,7 +188,6 @@
         }
         document.getElementById('step' + numeroStep).style.display = 'block';
 
-        // Nascondi l'header principale se siamo nel preventivo finale
         if (numeroStep === 3) {
             document.getElementById('headerPrincipale').style.display = 'none';
         } else {
@@ -186,7 +195,6 @@
         }
     }
 
-    // Durante la digitazione: mostra solo i punti delle migliaia
     function formattaValuta(inputElement) {
         let v = inputElement.value.replace(/[^\d,]/g, ""); 
         let pts = v.split(",");
@@ -194,13 +202,12 @@
         inputElement.value = pts.join(",");
     }
 
-    // Quando esci dal campo (onblur): inietta i decimali e allinea
     function formattaDecimale(inputElement) {
         let valStr = inputElement.value.replace(/\./g, "").replace(",", ".");
         let val = parseFloat(valStr) || 0;
         
         if (val === 0 && inputElement.id === "onorarioLibero") {
-            inputElement.value = ""; // Lascia vuoto per permettere il trucco della stampa
+            inputElement.value = ""; 
         } else if (val > 0) {
             inputElement.value = numberFormatter.format(val);
         }
@@ -493,17 +500,14 @@
 
         const totaleImposteFisseBase = impostaRegistro + impostaIpotecaria + impostaCatastale + impostaBollo + tassaTrascrizione + totaleSpeseExtra;
 
-        // Recupera i dati dell'intestazione personalizzata
         const dataAttuale = new Date().toLocaleDateString('it-IT');
         const impiegato = document.getElementById('nomeImpiegato').value || "Operatore";
         const pratica = document.getElementById('nomePratica').value || "Senza riferimento";
 
-        // Imposta la grammatica della nota finale in base alla presenza di IVA
-        let notaBeneTesto = "";
+        // Costruzione dinamica e corretta del Nota Bene
+        let notaBeneTesto = `<strong>NOTA BENE:</strong> Il preventivo è stato elaborato sulla base dei dati forniti e include le imposte di Stato, i contributi di legge e le competenze notarili.`;
         if (totaleIvaVenditore > 0) {
-            notaBeneTesto = `<strong>NOTA BENE:</strong> Il prezzo dell'immobile di ${formatEuro(totalePrezzo)} e l'IVA di ${formatEuro(totaleIvaVenditore)} non sono inclusi nel totale e vanno bonificati al venditore.`;
-        } else {
-            notaBeneTesto = `<strong>NOTA BENE:</strong> Il prezzo dell'immobile di ${formatEuro(totalePrezzo)} non è incluso nel totale e va bonificato al venditore.`;
+            notaBeneTesto += ` <span style="color: #e74c3c;">La presente compravendita sconta inoltre un'IVA di legge pari a <strong>${formatEuro(totaleIvaVenditore)}</strong> non inclusa in questo totale.</span>`;
         }
 
         document.getElementById('risultatoPreventivo').innerHTML = `
@@ -552,15 +556,15 @@
             </div>
 
             <div id="totaleFinaleBox" style="text-align: right; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                <h2 style="margin: 0; color: white; font-size: 1.4rem;">
-                    TOTALE DA VERSARE: 
-                    <span id="valoreTotaleStampa" class="valore-totale-stampa">€ 0,00</span>
-                    <span class="linea-stampa-vuota">_____________________</span>
+                <h2 style="margin: 0; display: flex; justify-content: flex-end; align-items: baseline; font-size: 1.4rem;">
+                    <span>TOTALE DA VERSARE: </span>
+                    <span id="valoreTotaleStampa" class="valore-totale-stampa" style="margin-left: 10px;">€ 0,00</span>
+                    <span class="linea-stampa-vuota"></span>
                 </h2>
                 <div id="dettaglioIva" style="font-size: 0.85rem; color: #bdc3c7; margin-top: 5px;">di cui IVA 22% scorporata: € 0,00</div>
             </div>
             
-            <p style="font-size: 0.8rem; color: #e74c3c; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 15px;">
+            <p style="font-size: 0.8rem; color: #666; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 15px; line-height: 1.4;">
                 ${notaBeneTesto}
             </p>
         `;
