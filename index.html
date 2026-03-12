@@ -48,8 +48,8 @@
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .app-container { box-shadow: none; border: none; padding: 0; }
             button { display: none !important; }
-            input[type="text"], input[type="date"] { border: none !important; background: transparent !important; padding: 0 !important; }
-            .box-guida { display: none !important; } 
+            input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; }
+            .box-guida, .tooltip { display: none !important; } 
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
@@ -82,7 +82,7 @@
         </div>
         
         <div class="box-guida">
-            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em>, la legge vieta il Prezzo-Valore: il calcolatore disabiliterà automaticamente la richiesta di Rendita Catastale e di Prima Casa.
+            💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em>, la legge vieta il Prezzo-Valore: il calcolatore bloccherà la Rendita Catastale e applicherà l'imposta solo sul Prezzo.
         </div>
         <label>Tipologia ACQUIRENTE:</label>
         <select id="tipoAcquirente" autocomplete="off" onchange="aggiornaStatoAcquirente()">
@@ -91,7 +91,7 @@
         </select>
 
         <div class="box-guida">
-            💡 <strong>Guida Venditore:</strong> In base alla scelta, l'algoritmo applicherà il Principio di Assorbimento o l'Alternatività IVA per calcolare formalità e bolli.
+            💡 <strong>Guida Venditore:</strong> L'algoritmo applicherà automaticamente l'Assorbimento o l'Alternatività IVA per il calcolo di formalità e bolli.
         </div>
         <label>Tipologia VENDITORE / Regime Fiscale:</label>
         <select id="regimeFiscale" autocomplete="off">
@@ -111,6 +111,10 @@
     <section id="step2" class="wizard-step">
         <h3>Fase 2: Composizione Atto</h3>
         
+        <div class="box-guida">
+            💡 <strong>Acquisti Misti e Quote:</strong> Nel blocco dell'immobile potrai specificare la percentuale esatta acquistata. Se ad esempio un coniuge compra al 50% come Prima Casa e l'altro al 50% come Seconda Casa, il programma calcolerà le aliquote separate e le sommerà.
+        </div>
+
         <div id="contenitoreImmobili"></div>
 
         <div class="flex-buttons" style="margin-top: 0;">
@@ -193,9 +197,7 @@
         const nascita = new Date(dataNascitaStr);
         let eta = oggi.getFullYear() - nascita.getFullYear();
         const m = oggi.getMonth() - nascita.getMonth();
-        if (m < 0 || (m === 0 && oggi.getDate() < nascita.getDate())) {
-            eta--;
-        }
+        if (m < 0 || (m === 0 && oggi.getDate() < nascita.getDate())) { eta--; }
         return eta;
     }
 
@@ -222,7 +224,7 @@
         return { us: 0.10, np: 0.90 }; // 93 e oltre
     }
 
-    // --- INIZIALIZZAZIONE E MEMORIA LOCALE ---
+    // --- INIZIALIZZAZIONE ---
     window.onload = function() {
         const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
         if (impiegatoSalvato) { document.getElementById('nomeImpiegato').value = impiegatoSalvato; }
@@ -267,6 +269,23 @@
         else if (val > 0) { inputElement.value = numberFormatter.format(val); }
     }
 
+    // --- CONTROLLI LOGICI E DINAMICHE UI QUOTE ---
+    function gestisciDiritto(selectElement) {
+        const blocco = selectElement.closest('.blocco-immobile, .blocco-terreno');
+        const boxData = blocco.querySelector('.box-data-nascita');
+        if (selectElement.value === 'piena') { boxData.style.display = 'none'; } 
+        else { boxData.style.display = 'block'; }
+    }
+
+    function controllaQuote(inputAgevolata) {
+        const blocco = inputAgevolata.closest('.blocco-immobile');
+        const qTotale = parseFloat(blocco.querySelector('.quota-totale').value) || 100;
+        const qAgev = parseFloat(inputAgevolata.value) || 0;
+        if (qAgev > qTotale) {
+            inputAgevolata.value = qTotale; // Forza il limite massimo
+        }
+    }
+
     function aggiornaStatoAcquirente() {
         const blocchi = document.querySelectorAll('.blocco-immobile');
         blocchi.forEach(blocco => {
@@ -275,32 +294,12 @@
         });
     }
 
-    // --- DINAMICHE UI E INTERFACCIA A SCOMPARSA ---
-    function gestisciDiritto(selectElement) {
-        const blocco = selectElement.closest('.blocco-immobile, .blocco-terreno');
-        const boxData = blocco.querySelector('.box-data-nascita');
-        const labelsPrezzo = blocco.querySelectorAll('label');
-        
-        let labelPrezzo = null;
-        labelsPrezzo.forEach(l => {
-            if(l.innerText.includes("Prezzo Dichiarato in Atto") || l.innerText.includes("Prezzo per la quota pattuita")) {
-                labelPrezzo = l;
-            }
-        });
-
-        if (selectElement.value === 'piena') {
-            boxData.style.display = 'none';
-            if(labelPrezzo) labelPrezzo.innerText = "Prezzo Dichiarato in Atto (€):";
-        } else {
-            boxData.style.display = 'block';
-            if(labelPrezzo) labelPrezzo.innerText = "Prezzo per la quota pattuita (€):";
-        }
-    }
-
     function bloccaNonAgevolabili(selectElement) {
         const blocco = selectElement.parentElement;
-        const checkboxAgevolazione = blocco.querySelector('.check-agevolazione');
+        const boxAgevolazione = blocco.querySelector('.box-agevolazione');
+        const inputAgevolata = blocco.querySelector('.quota-agevolata');
         const inputRendita = blocco.querySelector('.rendita-catastale');
+        
         const isSocieta = document.getElementById('tipoAcquirente').value === 'societa';
         const categoria = selectElement.value;
         
@@ -308,15 +307,17 @@
         const isLusso = (categoria === 'A1');
         const isInCostruzione = (categoria === 'F3' || categoria === 'F4');
         
+        // 1. Blocco Prima Casa se non permesso
         if (isLusso || isStrumentale || isSocieta) {
-            checkboxAgevolazione.checked = false;
-            checkboxAgevolazione.disabled = true;
-            checkboxAgevolazione.parentElement.style.opacity = "0.5";
+            inputAgevolata.value = 0;
+            inputAgevolata.disabled = true;
+            boxAgevolazione.style.opacity = "0.5";
         } else {
-            checkboxAgevolazione.disabled = false;
-            checkboxAgevolazione.parentElement.style.opacity = "1";
+            inputAgevolata.disabled = false;
+            boxAgevolazione.style.opacity = "1";
         }
 
+        // 2. Blocco Rendita se non permessa
         if (isStrumentale || isInCostruzione || isSocieta) {
             inputRendita.disabled = true;
             inputRendita.value = "";
@@ -329,24 +330,7 @@
         }
     }
 
-    function controllaSpuntaPertinenza(checkbox) {
-        if (!checkbox.checked) return;
-        const blocco = checkbox.closest('.blocco-immobile');
-        const categoria = blocco.querySelector('.cat-catastale').value;
-        const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
-        
-        if (isPertinenza) {
-            let haLusso = false;
-            const selectors = document.querySelectorAll('.cat-catastale');
-            for (let i = 0; i < selectors.length; i++) {
-                if (selectors[i].value === 'A1') haLusso = true;
-            }
-            if (haLusso) {
-                alert("⚠️ AVVISO CONSAPEVOLEZZA:\nHai selezionato un'agevolazione per una pertinenza, ma nell'atto è presente un immobile di lusso (A/1). Procedi solo se è pertinenza di un'altra abitazione già posseduta.");
-            }
-        }
-    }
-
+    // --- AGGIUNTA BLOCCHI IMMOBILI / TERRENI CON QUOTE ---
     let contatoreImmobili = 0;
     function aggiungiImmobile() {
         contatoreImmobili++;
@@ -395,13 +379,22 @@
                 <input type="date" class="data-nascita-usufruttuario" autocomplete="off">
             </div>
 
-            <div class="toggle-container" style="padding: 10px; margin-top: 5px;">
-                <input type="checkbox" id="agevolazione_${contatoreImmobili}" class="check-agevolazione" onchange="controllaSpuntaPertinenza(this)">
-                <label for="agevolazione_${contatoreImmobili}" style="font-weight: bold; color: #2980b9;">Richiesta Agevolazione Prima Casa</label>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 0.8rem;">Quota Acquistata Totale in Atto (%): <span class="tooltip" title="Inserisci la % dell'immobile che viene compravenduta (es. 100 o 50).">i</span></label>
+                    <input type="number" class="quota-totale" value="100" min="0.01" max="100" step="0.01" autocomplete="off" oninput="controllaQuote(this.parentElement.nextElementSibling.querySelector('.quota-agevolata'))">
+                </div>
             </div>
-            <label>Rendita Catastale Intera (€):</label>
+
+            <div class="box-agevolazione" style="background: #e8f4f8; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px solid #d6eaf8;">
+                <label style="color: #2980b9; margin-top: 0; font-size: 0.8rem;">Di cui con Agevolazione Prima Casa (%): <span class="tooltip" title="Se acquisto misto (es. marito prima casa, moglie seconda casa), scrivi la quota esatta. Il resto sarà calcolato ad aliquota ordinaria.">i</span></label>
+                <input type="number" class="quota-agevolata" value="100" min="0" max="100" step="0.01" autocomplete="off" oninput="controllaQuote(this)">
+            </div>
+
+            <label>Rendita Catastale Totale (del 100% dell'immobile) (€):</label>
             <input type="text" class="input-valuta rendita-catastale" placeholder="es. 500,00" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-            <label>Prezzo Dichiarato in Atto (€):</label>
+            
+            <label>Prezzo pattuito per la quota acquistata (€):</label>
             <input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
@@ -437,26 +430,16 @@
                 <input type="date" class="data-nascita-usufruttuario" autocomplete="off">
             </div>
 
-            <label>Prezzo Dichiarato in Atto (€):</label>
+            <label style="font-size: 0.8rem; margin-top: 15px;">Quota Acquistata Totale (%): <span class="tooltip" title="Inserisci la % del terreno compravenduta.">i</span></label>
+            <input type="number" class="quota-totale-terreno" value="100" min="0.01" max="100" step="0.01" autocomplete="off">
+
+            <label>Prezzo pattuito per la quota acquistata (€):</label>
             <input type="text" class="input-valuta prezzo-terreno" placeholder="es. 50.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         contenitore.appendChild(blocco);
     }
 
-    function aggiungiSpesaExtra() {
-        const contenitore = document.getElementById('contenitoreSpeseExtra');
-        const riga = document.createElement('div');
-        riga.className = 'riga-spesa';
-        riga.style = "display: flex; gap: 10px; margin-bottom: 10px;";
-        riga.innerHTML = `
-            <input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;" autocomplete="off">
-            <input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-            <button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>
-        `;
-        contenitore.appendChild(riga);
-    }
-
-    // --- MOTORE MATEMATICO PRINCIPALE ---
+    // --- IL NUOVO MOTORE MATEMATICO (Spacchettatore) ---
     function avviaCalcoloPreventivo() {
         const regimeVenditore = document.getElementById('regimeFiscale').value;
         const tipoAcquirente = document.getElementById('tipoAcquirente').value;
@@ -469,7 +452,7 @@
             return;
         }
 
-        // Valida la presenza della data di nascita prima di procedere
+        // Valida Date Nascita
         let erroreData = false;
         document.querySelectorAll('.tipo-diritto').forEach(select => {
             if (select.value !== 'piena') {
@@ -479,26 +462,8 @@
             }
         });
         if (erroreData) {
-            alert("ERRORE: Hai selezionato Nuda Proprietà o Usufrutto. Devi inserire obbligatoriamente la data di nascita dell'usufruttuario.");
+            alert("ERRORE: Hai selezionato Nuda Proprietà o Usufrutto. Devi inserire obbligatoriamente la data di nascita.");
             return;
-        }
-
-        let conteggioPertinenze = { 'C2': 0, 'C6': 0, 'C7': 0 };
-        let erroreDoppiaPertinenza = false;
-
-        for (let i = 0; i < blocchiImmobili.length; i++) {
-            const blocco = blocchiImmobili[i];
-            const categoria = blocco.querySelector('.cat-catastale').value;
-            const isAgevolata = blocco.querySelector('.check-agevolazione').checked;
-            if (isAgevolata && (categoria === 'C2' || categoria === 'C6' || categoria === 'C7')) {
-                conteggioPertinenze[categoria]++;
-                if (conteggioPertinenze[categoria] > 1) erroreDoppiaPertinenza = true;
-            }
-        }
-
-        if (erroreDoppiaPertinenza) {
-            alert("ERRORE FISCALE: Hai richiesto l'agevolazione Prima Casa su più di una pertinenza della stessa categoria. La legge lo vieta.");
-            return; 
         }
 
         vaiAlloStep(3);
@@ -513,20 +478,33 @@
         let imponibileStrumentaliPerIpoCatastale = 0;
         let totaleCatastalePPC = 0;
 
+        // FASE 1: CALCOLO PIENO DEI FABBRICATI E SPACCHETTAMENTO QUOTE
         for (let i = 0; i < blocchiImmobili.length; i++) {
             const blocco = blocchiImmobili[i];
             const num = i + 1;
             const categoria = blocco.querySelector('.cat-catastale').value;
-            const isAgevolata = blocco.querySelector('.check-agevolazione').checked;
             
-            const rendita = parseFloat(blocco.querySelector('.rendita-catastale').value.replace(/\./g, "").replace(",", ".")) || 0;
-            const prezzo = parseFloat(blocco.querySelector('.prezzo-dichiarato').value.replace(/\./g, "").replace(",", ".")) || 0;
+            // Lettura Quote
+            const qTotale = parseFloat(blocco.querySelector('.quota-totale').value) || 100;
+            const qAgevolata = parseFloat(blocco.querySelector('.quota-agevolata').value) || 0;
+            const qOrdinaria = qTotale - qAgevolata;
+            if (qAgevolata > 0) haPrimaCasa = true;
             
-            totalePrezzo += prezzo;
+            const renditaIntera = parseFloat(blocco.querySelector('.rendita-catastale').value.replace(/\./g, "").replace(",", ".")) || 0;
+            const prezzoPattuito = parseFloat(blocco.querySelector('.prezzo-dichiarato').value.replace(/\./g, "").replace(",", ".")) || 0;
+            
+            totalePrezzo += prezzoPattuito;
+
+            // Ripartizione proporzionale del prezzo sulle quote
+            const ratioAgev = qTotale > 0 ? (qAgevolata / qTotale) : 0;
+            const ratioOrd = qTotale > 0 ? (qOrdinaria / qTotale) : 0;
+            const prezzoPC = prezzoPattuito * ratioAgev;
+            const prezzoOrd = prezzoPattuito * ratioOrd;
+
             const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8');
             const isInCostruzione = (categoria === 'F3' || categoria === 'F4');
 
-            // Logica Calcolo Coefficienti Diritto (Piena, Nuda, Usufrutto)
+            // Calcolo Coefficienti Diritto
             let tipoDiritto = blocco.querySelector('.tipo-diritto').value;
             let pctDiritto = 1.0;
             let etichettaDiritto = "";
@@ -545,72 +523,62 @@
             }
 
             let usaPrezzoValore = false;
-            let baseImponibileRegistro = prezzo;
+            let imponibileRegistroPC = prezzoPC;
+            let imponibileRegistroOrd = prezzoOrd;
             
             if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !isStrumentale && !isInCostruzione) {
                 usaPrezzoValore = true;
-                const moltiplicatore = isAgevolata ? 115.5 : 126;
-                let valoreInteroCatastale = rendita * moltiplicatore;
-                // IL COEFFICIENTE ABBATTE IL VALORE CATASTALE (Prezzo-Valore)
-                baseImponibileRegistro = valoreInteroCatastale * pctDiritto;
+                // Calcolo Rendita Spaccata (frazionata prima per la quota, poi decurtata dal diritto)
+                imponibileRegistroPC = renditaIntera * 115.5 * (qAgevolata / 100) * pctDiritto;
+                imponibileRegistroOrd = renditaIntera * 126 * (qOrdinaria / 100) * pctDiritto;
             }
 
-            if (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa') {
-                let aliquota = 0.09;
-                if (isAgevolata) { aliquota = 0.02; haPrimaCasa = true; }
+            riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
+                <strong>Fabbricato #${num} (${categoria})</strong> - Quota compravenduta: ${qTotale}% ${etichettaDiritto}<br>`;
 
+            if (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa') {
                 if (isStrumentale && regimeVenditore === 'registro_impresa') {
                     flagStrumentaleDaImpresa = true;
-                    imponibileStrumentaliPerIpoCatastale += prezzo;
-                    
-                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                        <strong style="color: #e67e22;">Fabbricato #${num} (${categoria}) - STRUMENTALE</strong> ${etichettaDiritto}<br>
-                        Prezzo pattuito: ${formatEuro(prezzo)}. (Calcolo pieno: Ipotecaria 3% e Catastale 1%).
-                    </div>`;
+                    imponibileStrumentaliPerIpoCatastale += prezzoPattuito;
+                    riepilogoHTML += `<strong style="color: #e67e22;">IMMOBILE STRUMENTALE:</strong> Prezzo ${formatEuro(prezzoPattuito)}. Calcolo pieno Ipotecaria 3% e Catastale 1%.`;
                 } else {
-                    let impostaSingola = baseImponibileRegistro * aliquota;
-                    totaleRegistroProporzionale += impostaSingola;
-
-                    let baseText = "";
-                    if (usaPrezzoValore) {
-                        if (tipoDiritto === 'piena') {
-                            baseText = `(Rendita ${formatEuro(rendita)} x ${isAgevolata?115.5:126})`;
-                        } else {
-                            let valInt = rendita * (isAgevolata?115.5:126);
-                            baseText = `(Valore Catastale Intero ${formatEuro(valInt)} calcolato al ${Math.round(pctDiritto*100)}%)`;
-                        }
-                    } else {
-                        baseText = `(Calcolo forzato sul Prezzo pattuito)`;
+                    let calcText = usaPrezzoValore ? "Base Rendita" : "Base Prezzo";
+                    
+                    if (qAgevolata > 0) {
+                        let impSingolaPC = imponibileRegistroPC * 0.02;
+                        totaleRegistroProporzionale += impSingolaPC;
+                        riepilogoHTML += `<span style="color: #27ae60;">-> Quota Prima Casa (${qAgevolata}%): ${calcText} ${formatEuro(imponibileRegistroPC)} x 2% = <strong>${formatEuro(impSingolaPC)}</strong></span><br>`;
                     }
-
-                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                        <strong>Fabbricato #${num} (${categoria})</strong> ${etichettaDiritto}<br>
-                        Base imponibile: ${formatEuro(baseImponibileRegistro)} <br>
-                        <span style="color: #7f8c8d;">${baseText} -> Imposta Piena ${isAgevolata ? '2%' : '9%'} pari a <strong>${formatEuro(impostaSingola)}</strong></span>
-                    </div>`;
+                    if (qOrdinaria > 0) {
+                        let impSingolaOrd = imponibileRegistroOrd * 0.09;
+                        totaleRegistroProporzionale += impSingolaOrd;
+                        riepilogoHTML += `<span style="color: #7f8c8d;">-> Quota Ordinaria (${qOrdinaria}%): ${calcText} ${formatEuro(imponibileRegistroOrd)} x 9% = <strong>${formatEuro(impSingolaOrd)}</strong></span><br>`;
+                    }
                 }
 
             } else if (regimeVenditore === 'iva_impresa') {
-                let aliquotaIva = 0.10; 
-                if (isAgevolata) { aliquotaIva = 0.04; haPrimaCasa = true; }
-                if (categoria === 'A1' || isStrumentale) aliquotaIva = 0.22;
+                let aliqOrd = (categoria === 'A1' || isStrumentale) ? 0.22 : 0.10;
                 
-                let ivaSingola = prezzo * aliquotaIva;
-                totaleIvaVenditore += ivaSingola;
+                if (qAgevolata > 0) {
+                    let ivaSingolaPC = prezzoPC * 0.04;
+                    totaleIvaVenditore += ivaSingolaPC;
+                    riepilogoHTML += `<span style="color: #e74c3c; font-weight:bold;">-> IVA Prima Casa su quota ${qAgevolata}%: ${formatEuro(prezzoPC)} x 4% = ${formatEuro(ivaSingolaPC)}</span><br>`;
+                }
+                if (qOrdinaria > 0) {
+                    let ivaSingolaOrd = prezzoOrd * aliqOrd;
+                    totaleIvaVenditore += ivaSingolaOrd;
+                    riepilogoHTML += `<span style="color: #e74c3c; font-weight:bold;">-> IVA Ordinaria su quota ${qOrdinaria}%: ${formatEuro(prezzoOrd)} x ${aliqOrd*100}% = ${formatEuro(ivaSingolaOrd)}</span><br>`;
+                }
 
                 if (isStrumentale) {
                     flagStrumentaleDaImpresa = true;
-                    imponibileStrumentaliPerIpoCatastale += prezzo;
+                    imponibileStrumentaliPerIpoCatastale += prezzoPattuito;
                 }
-
-                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong>Fabbricato #${num} (${categoria})</strong> ${etichettaDiritto}<br>
-                    Prezzo pattuito: ${formatEuro(prezzo)} <br>
-                    <span style="color: #e74c3c; font-weight:bold;">(IVA Piena al ${aliquotaIva * 100}%: ${formatEuro(ivaSingola)})</span>
-                </div>`;
             }
+            riepilogoHTML += `</div>`;
         }
 
+        // FASE 2: CALCOLO TERRENI (Le aliquote si applicano dirette al prezzo pattuito della quota)
         for (let i = 0; i < blocchiTerreni.length; i++) {
             const blocco = blocchiTerreni[i];
             const num = i + 1;
@@ -618,6 +586,7 @@
             const tipoValore = selectTipo.value;
             const nomeTerreno = selectTipo.options[selectTipo.selectedIndex].text.split("(")[0].trim();
             const prezzo = parseFloat(blocco.querySelector('.prezzo-terreno').value.replace(/\./g, "").replace(",", ".")) || 0;
+            const qTotaleTerr = parseFloat(blocco.querySelector('.quota-totale-terreno').value) || 100;
             
             totalePrezzo += prezzo;
 
@@ -636,38 +605,34 @@
                 let impostaSingola = prezzo * 0.15;
                 totaleRegistroProporzionale += impostaSingola;
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> ${etichettaDiritto}<br>
-                    Prezzo pattuito: ${formatEuro(prezzo)} <br>
-                    <span style="color: #7f8c8d;">Imposta Piena Registro 15% pari a <strong>${formatEuro(impostaSingola)}</strong></span>
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Quota Acquistata: ${qTotaleTerr}% ${etichettaDiritto}<br>
+                    Prezzo pattuito: ${formatEuro(prezzo)} -> Imposta Piena Registro 15%: <strong>${formatEuro(impostaSingola)}</strong>
                 </div>`;
             } else if (tipoValore === 'agricolo_ppc') {
                 let impostaSingola = prezzo * 0.01;
                 totaleCatastalePPC += impostaSingola;
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> ${etichettaDiritto}<br>
-                    Prezzo pattuito: ${formatEuro(prezzo)} <br>
-                    <span style="color: #7f8c8d;">Imposta Piena Catastale 1% pari a <strong>${formatEuro(impostaSingola)}</strong></span>
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Quota Acquistata: ${qTotaleTerr}% ${etichettaDiritto}<br>
+                    Prezzo pattuito: ${formatEuro(prezzo)} -> Imposta Piena Catastale 1%: <strong>${formatEuro(impostaSingola)}</strong>
                 </div>`;
             } else if (tipoValore === 'edificabile_privato') {
                 let impostaSingola = prezzo * 0.09;
                 totaleRegistroProporzionale += impostaSingola;
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> ${etichettaDiritto}<br>
-                    Prezzo pattuito: ${formatEuro(prezzo)} <br>
-                    <span style="color: #7f8c8d;">Imposta Piena Registro 9% pari a <strong>${formatEuro(impostaSingola)}</strong></span>
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Quota Acquistata: ${qTotaleTerr}% ${etichettaDiritto}<br>
+                    Prezzo pattuito: ${formatEuro(prezzo)} -> Imposta Piena Registro 9%: <strong>${formatEuro(impostaSingola)}</strong>
                 </div>`;
             } else if (tipoValore === 'edificabile_iva') {
                 let ivaSingola = prezzo * 0.22;
                 totaleIvaVenditore += ivaSingola;
                 riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;">
-                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> ${etichettaDiritto}<br>
-                    Prezzo pattuito: ${formatEuro(prezzo)} <br>
-                    <span style="color: #e74c3c; font-weight:bold;">(IVA Piena al 22%: ${formatEuro(ivaSingola)})</span>
+                    <strong style="color: #27ae60;">Terreno #${num} (${nomeTerreno})</strong> - Quota Acquistata: ${qTotaleTerr}% ${etichettaDiritto}<br>
+                    Prezzo pattuito: ${formatEuro(prezzo)} -> <span style="color: #e74c3c; font-weight:bold;">IVA Piena 22%: ${formatEuro(ivaSingola)}</span>
                 </div>`;
             }
         }
 
-        // CALCOLO DELLE TASSE FUTURE
+        // FASE 3: CALCOLO DELLE TASSE FUTURE
         let futuroRegistro = 0, futuroIpotecaria = 0, futuroCatastale = 0, futuroBollo = 0, futuraTrascrizione = 0;
         let hasPPC = (totaleCatastalePPC > 0);
 
@@ -816,9 +781,9 @@
         const impiegato = document.getElementById('nomeImpiegato').value || "Operatore";
         const pratica = document.getElementById('nomePratica').value || "Senza riferimento";
 
-        let notaBeneTesto = `<strong>NOTA BENE:</strong> Il preventivo è stato elaborato sulla base dei dati forniti e include le imposte di Stato, i contributi di legge e le competenze notarili.`;
+        let notaBeneTesto = `<strong>NOTA BENE:</strong> Il preventivo è elaborato sui dati forniti e include imposte, contributi e competenze.`;
         if (totaleIvaVenditore > 0 && !isCondizionata) {
-            notaBeneTesto += ` <span style="color: #e74c3c;">L'atto sconta un'IVA al venditore pari a <strong>${formatEuro(totaleIvaVenditore)}</strong>, non inclusa in questo totale.</span>`;
+            notaBeneTesto += ` <span style="color: #e74c3c;">L'atto sconta un'IVA al venditore di <strong>${formatEuro(totaleIvaVenditore)}</strong>, non inclusa in questo totale.</span>`;
         }
 
         document.getElementById('risultatoPreventivo').innerHTML = `
