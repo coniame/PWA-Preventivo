@@ -44,13 +44,16 @@
 
         .linea-stampa-vuota { display: none; width: 150px; border-bottom: 2px solid #000; margin-left: 10px; }
         .linea-onorario-vuota { display: none; }
+
+        .btn-home { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #7f8c8d; font-size: 0.9rem; font-weight: bold; background: #e8f4f8; padding: 5px 15px; border-radius: 20px; transition: all 0.3s; }
+        .btn-home:hover { background: #d6eaf8; color: #2c3e50; }
         
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .app-container { box-shadow: none; border: none; padding: 0; }
             button { display: none !important; }
             input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; }
-            .box-guida, .tooltip { display: none !important; } 
+            .box-guida, .tooltip, .btn-home { display: none !important; } 
             #tipoAttoCV { display: none !important; } /* Nasconde la tendina del toggle in stampa */
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
@@ -67,6 +70,7 @@
 
 <div class="app-container">
     <header id="headerPrincipale">
+        <a href="index.html" class="btn-home">⬅ Torna al Menu Principale</a>
         <h1>NUOVO PREVENTIVO</h1>
         <h2>Calcolo Imposte e Competenze</h2>
     </header>
