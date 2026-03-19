@@ -38,15 +38,15 @@
         .box-avveramento { background: #fff9c4; border: 2px dashed #f39c12; padding: 15px; margin-top: 20px; border-radius: 8px; font-size: 0.9rem; color: #d35400; }
         .box-avveramento h4 { margin-top: 0; margin-bottom: 10px; color: #e67e22; }
 
+        .btn-home { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #7f8c8d; font-size: 0.9rem; font-weight: bold; background: #e8f4f8; padding: 5px 15px; border-radius: 20px; transition: all 0.3s; }
+        .btn-home:hover { background: #d6eaf8; color: #2c3e50; }
+
         .wizard-step { display: none; }
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
 
         .linea-stampa-vuota { display: none; width: 150px; border-bottom: 2px solid #000; margin-left: 10px; }
         .linea-onorario-vuota { display: none; }
-
-        .btn-home { display: inline-block; margin-bottom: 15px; text-decoration: none; color: #7f8c8d; font-size: 0.9rem; font-weight: bold; background: #e8f4f8; padding: 5px 15px; border-radius: 20px; transition: all 0.3s; }
-        .btn-home:hover { background: #d6eaf8; color: #2c3e50; }
         
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -54,7 +54,7 @@
             button { display: none !important; }
             input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; }
             .box-guida, .tooltip, .btn-home { display: none !important; } 
-            #tipoAttoCV { display: none !important; } /* Nasconde la tendina del toggle in stampa */
+            #tipoAttoCV, #tipoAttoMutuo { display: none !important; } 
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
@@ -70,18 +70,17 @@
 
 <div class="app-container">
     <header id="headerPrincipale">
-        <h1>PREVENTIVO COMPRAVENDITA</h1>
-        <h2>Calcolo Imposte e Competenze</h2>
         <a href="index.html" class="btn-home">⬅ Torna al Menu Principale</a>
+        <h1>NUOVO PREVENTIVO</h1>
+        <h2>Calcolo Imposte e Competenze</h2>
     </header>
 
     <section id="step1" class="wizard-step">
         <h3>Fase 1: Impostazioni della Pratica</h3>
 
         <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffcc80; margin-bottom: 15px;">
-            <input type="hidden" id="nomeImpiegato"
-            
-            <label>Cliente / Nome Pratica:</label>
+            <input type="hidden" id="nomeImpiegato">
+            <label style="margin-top: 0;">Cliente / Nome Pratica:</label>
             <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi" autocomplete="off">
         </div>
         
@@ -294,8 +293,6 @@
         document.getElementById('checkMutuo').checked = false;
         document.getElementById('boxMutuo').style.display = 'none';
     };
-
-    function salvaImpiegato(nome) { localStorage.setItem('nomeImpiegatoPWA', nome); }
 
     function vaiAlloStep(numeroStep) {
         const steps = document.querySelectorAll('.wizard-step');
@@ -692,7 +689,7 @@
             if (importoSpesa > 0) { totaleSpeseExtraCV += importoSpesa; speseExtraHTMLCV += `<tr><td style="padding: 4px 0; padding-left: 10px; font-size: 0.9rem; color: #555;">- ${nomeSpesa}</td><td style="text-align: right; font-size: 0.9rem;">${formatEuro(importoSpesa)}</td></tr>`; }
         }
 
-        // --- CALCOLO CONTRIBUTI DOPPIO (Pubblico e Privato) ---
+        // --- CALCOLO CONTRIBUTI DOPPIO COMPRAVENDITA (Pubblico e Privato) ---
         const scaglione = PUB.find(x => totalePrezzoCV <= x.max) || PUB[PUB.length - 1];
         const scaglionePrivato = PRIV.find(x => totalePrezzoCV <= x.max) || PRIV[PRIV.length - 1];
         const colonna = haPrimaCasa ? "70%" : "100%"; 
@@ -714,7 +711,8 @@
         // FASE 2: CALCOLO MUTUO (SE ATTIVO)
         let htmlMutuo = "";
         let totaleImposteFisseBaseMutuo = 0;
-        let totaleContributiMutuoPrecalc = 0;
+        let totContributiMutuoPUB = 0;
+        let totContributiMutuoPRIV = 0;
         let notaImpostaBanca = "";
 
         if (isMutuoAttivo) {
@@ -727,14 +725,23 @@
                 <strong>💡 Trattenuta Bancaria (Imposta Sostitutiva):</strong> L'imposta di legge di <strong>${formatEuro(impostaBanca)}</strong> verrà trattenuta direttamente dalla Banca all'erogazione. Non è inclusa in questo preventivo notarile.
             </div>`;
 
-            let scaglioneM = PUB.find(x => importoIpoteca <= x.max) || PUB[PUB.length - 1];
-            let colonnaM = isPrimaCasaMutuo ? "70%" : "100%";
-            let onorarioRepertorioM = scaglioneM.h[colonnaM] || 0;
+            let scaglioneM_PUB = PUB.find(x => importoIpoteca <= x.max) || PUB[PUB.length - 1];
+            let scaglioneM_PRIV = PRIV.find(x => importoIpoteca <= x.max) || PRIV[PRIV.length - 1];
             
-            let tArchivioNudaM = Math.round(onorarioRepertorioM * 0.10 * 100) / 100;
-            let cassaNazM = Math.round(onorarioRepertorioM * scaglioneM.c * 100) / 100;
-            let baseIvaContributiM = cassaNazM + Math.round(onorarioRepertorioM * 0.04 * 100) / 100 + Math.round(onorarioRepertorioM * 0.002 * 100) / 100 + Math.round(onorarioRepertorioM * 0.06 * 100) / 100;
-            totaleContributiMutuoPrecalc = tArchivioNudaM + baseIvaContributiM + Math.round(baseIvaContributiM * 0.22 * 100) / 100;
+            // CORREZIONE FISCALE: Il Mutuo Fondiario gode di dimidiamento dell'onorario (50%)
+            let colonnaM = isPrimaCasaMutuo ? "50%" : "100%";
+            
+            // Calcolo PUB Mutuo
+            let onorarioRepertorioM_PUB = scaglioneM_PUB.h[colonnaM] || 0;
+            let cassaNazM_PUB = Math.round(onorarioRepertorioM_PUB * scaglioneM_PUB.c * 100) / 100;
+            let baseIvaContributiM_PUB = cassaNazM_PUB + Math.round(onorarioRepertorioM_PUB * 0.04 * 100) / 100 + Math.round(onorarioRepertorioM_PUB * 0.002 * 100) / 100 + Math.round(onorarioRepertorioM_PUB * 0.06 * 100) / 100;
+            totContributiMutuoPUB = (Math.round(onorarioRepertorioM_PUB * 0.10 * 100) / 100) + baseIvaContributiM_PUB + Math.round(baseIvaContributiM_PUB * 0.22 * 100) / 100;
+
+            // Calcolo PRIV Mutuo
+            let onorarioRepertorioM_PRIV = scaglioneM_PRIV.h[colonnaM] || 0;
+            let cassaNazM_PRIV = Math.round(onorarioRepertorioM_PRIV * scaglioneM_PRIV.c * 100) / 100;
+            let baseIvaContributiM_PRIV = cassaNazM_PRIV + Math.round(onorarioRepertorioM_PRIV * 0.04 * 100) / 100 + Math.round(onorarioRepertorioM_PRIV * 0.002 * 100) / 100 + Math.round(onorarioRepertorioM_PRIV * 0.06 * 100) / 100;
+            totContributiMutuoPRIV = (Math.round(onorarioRepertorioM_PRIV * 0.10 * 100) / 100) + baseIvaContributiM_PRIV + Math.round(baseIvaContributiM_PRIV * 0.22 * 100) / 100;
 
             let totaleSpeseExtraM = 0;
             let speseExtraHTMLM = ``;
@@ -756,11 +763,17 @@
                 <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
                     ${speseExtraHTMLM}
                     <tr>
-                        <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Mutuo</td>
+                        <td style="padding: 5px 0; padding-left: 10px; color: #555;">
+                            - Tassa Archivio Mutuo
+                            <select id="tipoAttoMutuo" onchange="cambiaTipoAtto(this, 'tassaArchivioMutuoInput', ${totContributiMutuoPUB}, ${totContributiMutuoPRIV}, ${totaleImposteFisseBaseCV}, ${totaleImposteFisseBaseMutuo})" style="width: auto; padding: 2px 5px; font-size: 0.8rem; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc; background: #f4ecf7;">
+                                <option value="pubblico">Atto Pubblico</option>
+                                <option value="privato">Scrittura Privata</option>
+                            </select>
+                        </td>
                         <td style="text-align: right;">
                             <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
                                 <span style="font-weight: bold; color: #555;">€</span>
-                                <input type="text" id="tassaArchivioMutuoInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(totaleContributiMutuoPrecalc)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBaseCV}, ${totaleImposteFisseBaseMutuo})">
+                                <input type="text" id="tassaArchivioMutuoInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(totContributiMutuoPUB)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBaseCV}, ${totaleImposteFisseBaseMutuo})">
                             </div>
                         </td>
                     </tr>
