@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Preventivatore Notarile PWA</title>
     <style>
+        /* GRAFICA DELL'APP */
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #333; }
         .app-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         header { text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px; }
@@ -140,6 +141,14 @@
             </div>
         </div>
 
+        <div style="background: #fdf2e9; border: 2px solid #e67e22; padding: 15px; margin-top: 15px; border-radius: 8px;">
+            <label style="color: #d35400; margin-top: 0;">📝 Scomputo imposte pagate al Preliminare (Caparra/Acconto):</label>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                <input type="text" id="importoPreliminare" class="input-valuta" placeholder="Importo €" style="flex: 2; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+                <span style="flex: 1; font-size: 0.8rem; color: #e67e22;">Imposta proporzionale già versata (0,50% o 3%). Verrà detratta dal Registro.</span>
+            </div>
+        </div>
+
         <div class="toggle-container" style="background: #e8daef; border: 1px solid #d2b4de; margin-top: 20px;">
             <input type="checkbox" id="checkMutuo" autocomplete="off" onchange="attivaMutuo(this)">
             <label for="checkMutuo" style="color: #8e44ad; font-weight: bold;">🏦 Aggiungi Atto di MUTUO contestuale</label>
@@ -206,6 +215,7 @@
         {max: Infinity, h:{"100%":1394, "70%":976, "50%":697, "25%":349}, c:0.42}
     ];
 
+    // --- TABELLA UFFICIALE SCRITTURE PRIVATE ---
     const PRIV = [
         {max: 37000, h:{"100%":261, "70%":183, "50%":131, "25%":65}, c:0.22},
         {max: 55800, h:{"100%":304, "70%":213, "50%":152, "25%":76}, c:0.42},
@@ -575,9 +585,16 @@
         if (flagStrumentaleDaImpresa) { let extraIpo = imponibileStrumentaliPerIpoCatastale * 0.03; let extraCata = imponibileStrumentaliPerIpoCatastale * 0.01; futuroIpotecaria = extraIpo < 200 ? 200 : extraIpo; futuroCatastale = extraCata < 200 ? 200 : extraCata; if (regimeVenditore !== 'iva_impresa' && totaleRegistroProporzionale === 0) futuroRegistro = 200; }
 
         let impostaRegistro = 0, impostaIpotecaria = 0, impostaCatastale = 0, impostaBollo = 0, tassaTrascrizione = 0;
+        
+        // LETTURA CREDITI E SCOMPUTI
         let creditoInput = document.getElementById('importoCredito'); let creditoDichiarato = creditoInput ? parseFloat(creditoInput.value.replace(/\./g, "").replace(",", ".")) || 0 : 0;
         let quotaCreditoInput = document.getElementById('quotaCredito'); let quotaCredito = quotaCreditoInput ? (parseFloat(quotaCreditoInput.value) || 100) : 100;
-        let creditoUtilizzatoOggi = 0; let avvisoCondizioneHTML = "";
+        
+        let scomputoInput = document.getElementById('importoPreliminare'); let scomputoPreliminare = scomputoInput ? parseFloat(scomputoInput.value.replace(/\./g, "").replace(",", ".")) || 0 : 0;
+
+        let creditoUtilizzatoOggi = 0; 
+        let preliminareScomputatoOggi = 0;
+        let avvisoCondizioneHTML = "";
 
         if (isCondizionata) {
             impostaRegistro = 200; impostaIpotecaria = 0; impostaCatastale = 0; impostaBollo = 155; tassaTrascrizione = 235;
@@ -587,7 +604,20 @@
             avvisoCondizioneHTML = `<div class="box-avveramento"><h4>⚠️ ATTO SOTTOPOSTO A CONDIZIONE SOSPENSIVA</h4><p>Totale futuro: <strong>${formatEuro(totaleImposteFutureDaPagare)}</strong>.</p></div>`;
         } else {
             impostaRegistro = futuroRegistro; impostaIpotecaria = futuroIpotecaria; impostaCatastale = futuroCatastale;
-            if (creditoDichiarato > 0) { let capienzaMassima = impostaRegistro * (quotaCredito / 100); creditoUtilizzatoOggi = Math.min(creditoDichiarato, capienzaMassima); impostaRegistro -= creditoUtilizzatoOggi; }
+            
+            // 1. Applica prima il Credito d'Imposta
+            if (creditoDichiarato > 0) { 
+                let capienzaMassima = impostaRegistro * (quotaCredito / 100); 
+                creditoUtilizzatoOggi = Math.min(creditoDichiarato, capienzaMassima); 
+                impostaRegistro -= creditoUtilizzatoOggi; 
+            }
+
+            // 2. Applica poi lo Scomputo Preliminare (Solo se non è vendita ad IVA)
+            if (regimeVenditore !== 'iva_impresa' && scomputoPreliminare > 0) {
+                preliminareScomputatoOggi = Math.min(scomputoPreliminare, impostaRegistro);
+                impostaRegistro -= preliminareScomputatoOggi;
+            }
+
             if (regimeVenditore === 'iva_impresa') { impostaBollo = 230; tassaTrascrizione = 90; } 
             else { if (totaleRegistroProporzionale > 0 || (hasPPC && !flagStrumentaleDaImpresa)) { impostaBollo = 0; tassaTrascrizione = 0; } else { impostaBollo = 155; tassaTrascrizione = 90; } }
         }
@@ -692,6 +722,38 @@
             </div>`;
         }
 
+        const dataAttuale = new Date().toLocaleDateString('it-IT');
+        const impiegato = document.getElementById('nomeImpiegato').value || "Operatore";
+        const pratica = document.getElementById('nomePratica').value || "Senza riferimento";
+
+        let rigaCreditoOut = "";
+        if (creditoUtilizzatoOggi > 0 && !isCondizionata) {
+            let creditoResiduoOggi = creditoDichiarato - creditoUtilizzatoOggi;
+            rigaCreditoOut = `
+                <tr style="background-color: #eafaf1; border-bottom: 1px solid #ccc;">
+                    <td style="padding: 5px 0; padding-left: 10px; color: #27ae60;">
+                        - Sconto Credito Prima Casa
+                        ${creditoResiduoOggi > 0 ? `<br><span style="font-size:0.75rem; color:#7f8c8d;">(Residuo a credito: ${formatEuro(creditoResiduoOggi)})</span>` : ''}
+                    </td>
+                    <td style="text-align: right; color: #27ae60; font-weight: bold;">- ${formatEuro(creditoUtilizzatoOggi)}</td>
+                </tr>
+            `;
+        }
+
+        let rigaPreliminareOut = "";
+        if (preliminareScomputatoOggi > 0 && !isCondizionata) {
+            let preliminareResiduo = scomputoPreliminare - preliminareScomputatoOggi;
+            rigaPreliminareOut = `
+                <tr style="background-color: #fdf2e9; border-bottom: 1px solid #ccc;">
+                    <td style="padding: 5px 0; padding-left: 10px; color: #d35400;">
+                        - Scomputo Imposte Preliminare
+                        ${preliminareResiduo > 0 ? `<br><span style="font-size:0.75rem; color:#e67e22;">(Credito a rimborso: ${formatEuro(preliminareResiduo)})</span>` : ''}
+                    </td>
+                    <td style="text-align: right; color: #d35400; font-weight: bold;">- ${formatEuro(preliminareScomputatoOggi)}</td>
+                </tr>
+            `;
+        }
+
         document.getElementById('risultatoPreventivo').innerHTML = `
             <div style="text-align: center; border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-bottom: 20px;">
                 <h1 style="font-size: 1.8rem; color: #2c3e50; margin: 0;">PREVENTIVO DELLO STUDIO NOTARILE</h1>
@@ -704,8 +766,9 @@
 
             <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
                 <tr style="border-bottom: 2px solid #333;"><th>Tasse ed Imposte</th><th style="text-align: right;">Importo</th></tr>
-                <tr><td style="padding: 5px 0;">Imposta di Registro (calcolata)</td><td style="text-align: right; font-weight: bold;">${formatEuro(impostaRegistro + creditoUtilizzatoOggi)}</td></tr>
-                ${creditoUtilizzatoOggi > 0 ? `<tr><td style="padding: 5px 0; color: #27ae60;">- Sconto Credito</td><td style="text-align: right; color: #27ae60; font-weight: bold;">- ${formatEuro(creditoUtilizzatoOggi)}</td></tr>` : ''}
+                <tr><td style="padding: 5px 0;">Imposta di Registro (calcolata)</td><td style="text-align: right; font-weight: bold;">${formatEuro(impostaRegistro + creditoUtilizzatoOggi + preliminareScomputatoOggi)}</td></tr>
+                ${rigaCreditoOut}
+                ${rigaPreliminareOut}
                 <tr><td style="padding: 5px 0; border-top: 1px solid #eee;">Totale Imposta di Registro dovuta</td><td style="text-align: right; border-top: 1px solid #eee;"><strong>${formatEuro(impostaRegistro)}</strong></td></tr>
                 
                 <tr><td style="padding: 5px 0;">Imposta Ipotecaria</td><td style="text-align: right;">${formatEuro(impostaIpotecaria)}</td></tr>
