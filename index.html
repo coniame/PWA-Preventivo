@@ -70,6 +70,9 @@
 
         .btn-donazioni { background: #8e44ad; color: white; border: 2px solid #732d91; }
         .btn-donazioni:hover { background: #732d91; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(142, 68, 173, 0.3); }
+        
+        .btn-bozza { background: #27ae60; color: white; border: 2px solid #1e8449; margin-bottom: 0; }
+        .btn-bozza:hover { background: #1e8449; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(39, 174, 96, 0.3); }
 
         footer { margin-top: auto; padding-top: 30px; font-size: 0.85rem; color: #95a5a6; text-align: center; }
     </style>
@@ -88,11 +91,20 @@
         </div>
 
         <div class="istruzioni">
-            Seleziona il modulo per generare il preventivo:
+            Seleziona il modulo per un <strong>nuovo preventivo</strong>:
         </div>
 
         <a href="CV.html" class="btn-nav btn-cv">Compravendite e Mutui</a>
         <a href="Donazioni.html" class="btn-nav btn-donazioni">Donazioni</a>
+        
+        <div style="margin-top: 30px; border-top: 2px dashed #ecf0f1; padding-top: 25px;">
+            <div class="istruzioni" style="font-size: 1rem; margin-bottom: 15px;">
+                Oppure ricarica una <strong>pratica in sospeso</strong>:
+            </div>
+            
+            <label for="fileBozza" class="btn-nav btn-bozza">📂 Carica Bozza (.bozza)</label>
+            <input type="file" id="fileBozza" accept=".bozza" style="display: none;" onchange="caricaBozza(event)">
+        </div>
     </div>
 
     <footer>
@@ -100,7 +112,7 @@
     </footer>
 
     <script>
-        // Al caricamento della pagina, cerca se c'è già un nome sul "post-it"
+        // Al caricamento, cerca il nome impiegato salvato
         window.onload = function() {
             const nomeSalvato = localStorage.getItem('nomeImpiegatoPWA');
             if (nomeSalvato) {
@@ -108,9 +120,45 @@
             }
         };
 
-        // Ogni volta che digiti un carattere, aggiorna il "post-it"
         function salvaNome(nome) {
             localStorage.setItem('nomeImpiegatoPWA', nome);
+        }
+
+        // Funzione per la lettura del file di bozza
+        function caricaBozza(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const datiBozza = JSON.parse(e.target.result);
+                    
+                    // Verifica che il file abbia l'etichetta del nostro programma
+                    if (!datiBozza.tipoSoftware || datiBozza.tipoSoftware !== 'StudioNotarileBozza') {
+                        throw new Error("Il file selezionato non è una bozza valida del preventivatore.");
+                    }
+
+                    // Salva l'intero pacchetto dati nella memoria del browser
+                    localStorage.setItem('praticaInSospeso', e.target.result);
+
+                    // Smistamento automatico in base al tipo di atto
+                    if (datiBozza.tipoAtto === 'cv') {
+                        window.location.href = 'CV.html';
+                    } else if (datiBozza.tipoAtto === 'donazione') {
+                        window.location.href = 'Donazioni.html';
+                    } else {
+                        alert("Tipo di preventivo sconosciuto all'interno della bozza.");
+                    }
+                } catch (error) {
+                    alert("Errore di lettura: " + error.message);
+                }
+                
+                // Resetta l'input per permettere di ricaricare lo stesso file se necessario
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
         }
     </script>
 </body>
