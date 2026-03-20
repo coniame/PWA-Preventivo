@@ -53,7 +53,7 @@
             
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
-            .onorario-vuoto #dettaglioIva { color: #000 !important; }
+            .onorario-vuoto #riepilogoContabile { display: none !important; }
             .onorario-vuoto .print_onorarioLibero_cv, .onorario-vuoto .print_onorarioLibero_m { display: none !important; }
             .onorario-vuoto .linea-onorario-vuota { display: flex !important; align-items: flex-end; border-bottom: 1px solid #000; width: 100%; height: 20px; margin-top: 5px; }
         }
@@ -70,109 +70,51 @@
 
     <section id="step1" class="wizard-step">
         <h3>Fase 1: Impostazioni della Pratica</h3>
-
         <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffcc80; margin-bottom: 15px;">
             <input type="hidden" id="nomeImpiegato">
             <label style="margin-top: 0;">Cliente / Nome Pratica:</label>
             <input type="text" id="nomePratica" placeholder="Es. Compravendita Bianchi / Verdi" autocomplete="off">
         </div>
-        
         <div class="box-guida">💡 <strong>Guida Acquirente:</strong> Selezionando <em>Società</em>, la legge vieta il Prezzo-Valore. Il calcolatore bloccherà la Rendita.</div>
         <label>Tipologia ACQUIRENTE:</label>
-        <select id="tipoAcquirente" autocomplete="off" onchange="aggiornaStatoAcquirente()">
-            <option value="privato">Persona Fisica (Privato)</option>
-            <option value="societa">Società, Ente o Uso Professionale</option>
-        </select>
-
+        <select id="tipoAcquirente" autocomplete="off" onchange="aggiornaStatoAcquirente()"><option value="privato">Persona Fisica (Privato)</option><option value="societa">Società, Ente o Uso Professionale</option></select>
         <label>Tipologia VENDITORE / Regime Fiscale:</label>
-        <select id="regimeFiscale" autocomplete="off">
-            <option value="registro_privato">1. Privato (Imposta di Registro)</option>
-            <option value="registro_impresa">2. Impresa non costruttrice o Costruttrice OLTRE 5 anni SENZA opz. (Esente)</option>
-            <option value="iva_impresa">3. Impresa Costruttrice ENTRO 5 anni o OLTRE 5 anni CON opz. (Soggetta ad IVA)</option>
-        </select>
-
-        <div class="toggle-container">
-            <input type="checkbox" id="condizioneSospensiva" autocomplete="off">
-            <label for="condizioneSospensiva">Atto sottoposto a Condizione Sospensiva</label>
-        </div>
-
+        <select id="regimeFiscale" autocomplete="off"><option value="registro_privato">1. Privato (Imposta di Registro)</option><option value="registro_impresa">2. Impresa non costruttrice o Costruttrice OLTRE 5 anni SENZA opz. (Esente)</option><option value="iva_impresa">3. Impresa Costruttrice ENTRO 5 anni o OLTRE 5 anni CON opz. (Soggetta ad IVA)</option></select>
+        <div class="toggle-container"><input type="checkbox" id="condizioneSospensiva" autocomplete="off"><label for="condizioneSospensiva">Atto sottoposto a Condizione Sospensiva</label></div>
         <button type="button" onclick="vaiAlloStep(2)">Avanti ➔</button>
     </section>
 
     <section id="step2" class="wizard-step">
         <h3>Fase 2: Composizione Atto e Mutuo</h3>
-        
         <div id="contenitoreImmobili"></div>
-
-        <div class="flex-buttons" style="margin-top: 0;">
-            <button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Fabbricato</button>
-            <button type="button" class="secondary" onclick="aggiungiTerreno()" style="background: #27ae60;">+ Terreno</button>
-        </div>
-
+        <div class="flex-buttons" style="margin-top: 0;"><button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Fabbricato</button><button type="button" class="secondary" onclick="aggiungiTerreno()" style="background: #27ae60;">+ Terreno</button></div>
         <div style="border-top: 2px solid #ecf0f1; margin-top: 20px; padding-top: 15px;">
             <label>Spese vive COMPRAVENDITA (Visure, APE, ecc.):</label>
-            <div id="contenitoreSpeseExtra">
-                <div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="nome-spesa" value="Spese Visure e Ispezioni" style="flex: 2;" autocomplete="off">
-                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-                </div>
-            </div>
+            <div id="contenitoreSpeseExtra"><div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px;"><input type="text" class="nome-spesa" value="Spese Visure e Ispezioni" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"></div></div>
             <button type="button" class="secondary" onclick="aggiungiSpesaExtra()" style="padding: 8px; font-size: 0.9rem;">+ Aggiungi altra spesa</button>
         </div>
-
         <div style="background: #eafaf1; border: 2px solid #2ecc71; padding: 15px; margin-top: 20px; border-radius: 8px;">
             <label style="color: #27ae60; margin-top: 0;">💰 Credito d'Imposta Prima Casa (Opzionale):</label>
-            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                <input type="text" id="importoCredito" class="input-valuta" placeholder="Importo €" style="flex: 2; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-                <span style="font-size: 0.9rem; font-weight: bold; color: #2c3e50;">su quota al</span>
-                <input type="number" id="quotaCredito" placeholder="100" value="100" min="1" max="100" style="flex: 1; text-align: center;" autocomplete="off">
-                <span style="font-size: 0.9rem; font-weight: bold; color: #2c3e50;">%</span>
-            </div>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;"><input type="text" id="importoCredito" class="input-valuta" placeholder="Importo €" style="flex: 2; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><span style="font-size: 0.9rem; font-weight: bold; color: #2c3e50;">su quota al</span><input type="number" id="quotaCredito" placeholder="100" value="100" min="1" max="100" style="flex: 1; text-align: center;" autocomplete="off"><span style="font-size: 0.9rem; font-weight: bold; color: #2c3e50;">%</span></div>
         </div>
-
         <div style="background: #fdf2e9; border: 2px solid #e67e22; padding: 15px; margin-top: 15px; border-radius: 8px;">
             <label style="color: #d35400; margin-top: 0;">📝 Scomputo imposte pagate al Preliminare:</label>
-            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
-                <input type="text" id="importoPreliminare" class="input-valuta" placeholder="Importo €" style="flex: 2; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-                <span style="flex: 1; font-size: 0.8rem; color: #e67e22;">Imposta proporzionale già versata.</span>
-            </div>
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;"><input type="text" id="importoPreliminare" class="input-valuta" placeholder="Importo €" style="flex: 2; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><span style="flex: 1; font-size: 0.8rem; color: #e67e22;">Imposta proporzionale già versata.</span></div>
         </div>
-
-        <div class="toggle-container" style="background: #e8daef; border: 1px solid #d2b4de; margin-top: 20px;">
-            <input type="checkbox" id="checkMutuo" autocomplete="off" onchange="attivaMutuo(this)">
-            <label for="checkMutuo" style="color: #8e44ad; font-weight: bold;">🏦 Aggiungi Atto di MUTUO contestuale</label>
-        </div>
-
+        <div class="toggle-container" style="background: #e8daef; border: 1px solid #d2b4de; margin-top: 20px;"><input type="checkbox" id="checkMutuo" autocomplete="off" onchange="attivaMutuo(this)"><label for="checkMutuo" style="color: #8e44ad; font-weight: bold;">🏦 Aggiungi Atto di MUTUO contestuale</label></div>
         <div id="boxMutuo" class="blocco-mutuo">
             <h4 style="margin-top: 0; color: #8e44ad;">Dati Mutuo</h4>
-            <label>Tipologia Mutuo:</label>
-            <select id="tipoMutuo" autocomplete="off">
-                <option value="pc">Mutuo per acquisto Prima Casa (Imposta Sost. 0,25%)</option>
-                <option value="ord">Mutuo Ordinario / Seconda Casa (Imposta Sost. 2,00%)</option>
-            </select>
-            <label>Importo Mutuato (Erogato) (€):</label>
-            <input type="text" id="importoMutuo" class="input-valuta" placeholder="es. 100.000,00" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this); calcolaDoppioIpoteca(this)" onblur="formattaDecimale(this)">
-            <label>Importo Ipoteca Iscritta (€):</label>
-            <input type="text" id="importoIpoteca" class="input-valuta" placeholder="es. 200.000,00" style="text-align: right; font-weight: bold; color: #8e44ad;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-            
-            <label style="margin-top: 15px;">Spese vive extra SOLO PER MUTUO (se previste):</label>
-            <div id="contenitoreSpeseExtraMutuo"></div>
-            <button type="button" class="secondary" onclick="aggiungiSpesaExtraMutuo()" style="padding: 8px; font-size: 0.9rem; background: #af7ac5; color: white;">+ Aggiungi spesa Mutuo</button>
+            <label>Tipologia Mutuo:</label><select id="tipoMutuo" autocomplete="off"><option value="pc">Mutuo per acquisto Prima Casa (Imposta Sost. 0,25%)</option><option value="ord">Mutuo Ordinario / Seconda Casa (Imposta Sost. 2,00%)</option></select>
+            <label>Importo Mutuato (Erogato) (€):</label><input type="text" id="importoMutuo" class="input-valuta" placeholder="es. 100.000,00" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this); calcolaDoppioIpoteca(this)" onblur="formattaDecimale(this)">
+            <label>Importo Ipoteca Iscritta (€):</label><input type="text" id="importoIpoteca" class="input-valuta" placeholder="es. 200.000,00" style="text-align: right; font-weight: bold; color: #8e44ad;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <label style="margin-top: 15px;">Spese vive extra SOLO PER MUTUO (se previste):</label><div id="contenitoreSpeseExtraMutuo"></div><button type="button" class="secondary" onclick="aggiungiSpesaExtraMutuo()" style="padding: 8px; font-size: 0.9rem; background: #af7ac5; color: white;">+ Aggiungi spesa Mutuo</button>
         </div>
-
-        <div class="flex-buttons">
-            <button type="button" class="secondary" onclick="vaiAlloStep(1)">⬅ Indietro</button>
-            <button type="button" onclick="avviaCalcoloPreventivo()">Calcola Preventivo Finale ➔</button>
-        </div>
+        <div class="flex-buttons"><button type="button" class="secondary" onclick="vaiAlloStep(1)">⬅ Indietro</button><button type="button" onclick="avviaCalcoloPreventivo()">Calcola Preventivo Finale ➔</button></div>
     </section>
 
     <section id="step3" class="wizard-step">
         <div id="risultatoPreventivo"></div>
-        <div class="flex-buttons">
-            <button type="button" class="secondary" onclick="vaiAlloStep(2)">⬅ Modifica Dati</button>
-            <button type="button" class="secondary" onclick="salvaTesto()" style="background: #27ae60;">💾 Salva Dati (Testo)</button>
-            <button type="button" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
-        </div>
+        <div class="flex-buttons"><button type="button" class="secondary" onclick="vaiAlloStep(2)">⬅ Modifica Dati</button><button type="button" class="secondary" onclick="salvaTesto()" style="background: #27ae60;">💾 Salva Dati (Testo)</button><button type="button" onclick="window.print()">🖨️ Stampa / Salva PDF</button></div>
     </section>
 </div>
 
@@ -190,76 +132,28 @@
     function calcolaEta(dataNascitaStr) { const oggi = new Date(); const nascita = new Date(dataNascitaStr); let eta = oggi.getFullYear() - nascita.getFullYear(); const m = oggi.getMonth() - nascita.getMonth(); if (m < 0 || (m === 0 && oggi.getDate() < nascita.getDate())) { eta--; } return eta; }
     function getPercentualiDiritto(eta) { if (eta < 0) return { us: 0, np: 1 }; if (eta <= 20) return { us: 0.95, np: 0.05 }; if (eta <= 30) return { us: 0.90, np: 0.10 }; if (eta <= 40) return { us: 0.85, np: 0.15 }; if (eta <= 45) return { us: 0.80, np: 0.20 }; if (eta <= 50) return { us: 0.75, np: 0.25 }; if (eta <= 53) return { us: 0.70, np: 0.30 }; if (eta <= 56) return { us: 0.65, np: 0.35 }; if (eta <= 60) return { us: 0.60, np: 0.40 }; if (eta <= 63) return { us: 0.55, np: 0.45 }; if (eta <= 66) return { us: 0.50, np: 0.50 }; if (eta <= 69) return { us: 0.45, np: 0.55 }; if (eta <= 72) return { us: 0.40, np: 0.60 }; if (eta <= 75) return { us: 0.35, np: 0.65 }; if (eta <= 78) return { us: 0.30, np: 0.70 }; if (eta <= 82) return { us: 0.25, np: 0.75 }; if (eta <= 86) return { us: 0.20, np: 0.80 }; if (eta <= 92) return { us: 0.15, np: 0.85 }; return { us: 0.10, np: 0.90 }; }
 
-    window.onload = function() {
-        const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
-        if (impiegatoSalvato) { document.getElementById('nomeImpiegato').value = impiegatoSalvato; }
-        document.getElementById('nomePratica').value = '';
-        document.getElementById('checkMutuo').checked = false;
-        document.getElementById('boxMutuo').style.display = 'none';
-    };
-
-    function vaiAlloStep(numeroStep) {
-        const steps = document.querySelectorAll('.wizard-step');
-        for (let i = 0; i < steps.length; i++) { steps[i].style.display = 'none'; }
-        document.getElementById('step' + numeroStep).style.display = 'block';
-        if (numeroStep === 3) { document.getElementById('headerPrincipale').style.display = 'none'; } else { document.getElementById('headerPrincipale').style.display = 'block'; }
-    }
-
+    window.onload = function() { document.getElementById('nomePratica').value = ''; document.getElementById('checkMutuo').checked = false; document.getElementById('boxMutuo').style.display = 'none'; };
+    function vaiAlloStep(numeroStep) { const steps = document.querySelectorAll('.wizard-step'); for (let i = 0; i < steps.length; i++) { steps[i].style.display = 'none'; } document.getElementById('step' + numeroStep).style.display = 'block'; if (numeroStep === 3) { document.getElementById('headerPrincipale').style.display = 'none'; } else { document.getElementById('headerPrincipale').style.display = 'block'; } }
     function attivaMutuo(checkbox) { document.getElementById('boxMutuo').style.display = checkbox.checked ? 'block' : 'none'; }
     function calcolaDoppioIpoteca(inputMutuo) { let valStr = inputMutuo.value.replace(/\./g, "").replace(",", "."); let val = parseFloat(valStr) || 0; let valIpoteca = val * 2; document.getElementById('importoIpoteca').value = valIpoteca > 0 ? formatNumberStr(valIpoteca) : ""; }
     function gestisciDiritto(selectElement) { const blocco = selectElement.closest('.blocco-immobile, .blocco-terreno'); const boxData = blocco.querySelector('.box-data-nascita'); boxData.style.display = selectElement.value === 'piena' ? 'none' : 'block'; }
     function controllaQuote(inputAgevolata) { const blocco = inputAgevolata.closest('.blocco-immobile'); const qTotale = parseFloat(blocco.querySelector('.quota-totale').value) || 100; const qAgev = parseFloat(inputAgevolata.value) || 0; if (qAgev > qTotale) { inputAgevolata.value = qTotale; } }
     function aggiornaStatoAcquirente() { document.querySelectorAll('.blocco-immobile').forEach(blocco => { bloccaNonAgevolabili(blocco.querySelector('.cat-catastale')); }); }
 
-    // --- NUOVA GESTIONE AGEVOLAZIONI (AUTONOMA) ---
     function gestisciTipoAgevolazione(selectElement) {
-        const blocco = selectElement.closest('.box-agevolazione');
-        const boxQuota = blocco.querySelector('.box-quota-agevolata');
-        const helpAccorpamento = blocco.querySelector('.help-accorpamento');
-        const inputQuota = blocco.querySelector('.quota-agevolata');
-        
-        if (selectElement.value === 'nessuna') {
-            boxQuota.style.display = 'none'; helpAccorpamento.style.display = 'none'; inputQuota.value = 0;
-        } else if (selectElement.value === 'ordinaria') {
-            boxQuota.style.display = 'block'; helpAccorpamento.style.display = 'none'; if (parseFloat(inputQuota.value) === 0) inputQuota.value = 100;
-        } else if (selectElement.value === 'accorpamento') {
-            boxQuota.style.display = 'block'; helpAccorpamento.style.display = 'block'; if (parseFloat(inputQuota.value) === 0) inputQuota.value = 100;
-        }
+        const blocco = selectElement.closest('.box-agevolazione'); const boxQuota = blocco.querySelector('.box-quota-agevolata'); const helpAccorpamento = blocco.querySelector('.help-accorpamento'); const inputQuota = blocco.querySelector('.quota-agevolata');
+        if (selectElement.value === 'nessuna') { boxQuota.style.display = 'none'; helpAccorpamento.style.display = 'none'; inputQuota.value = 0; } 
+        else if (selectElement.value === 'ordinaria') { boxQuota.style.display = 'block'; helpAccorpamento.style.display = 'none'; if (parseFloat(inputQuota.value) === 0) inputQuota.value = 100; } 
+        else if (selectElement.value === 'accorpamento') { boxQuota.style.display = 'block'; helpAccorpamento.style.display = 'block'; if (parseFloat(inputQuota.value) === 0) inputQuota.value = 100; }
     }
 
     function bloccaNonAgevolabili(selectElement) {
-        const blocco = selectElement.closest('.blocco-immobile');
-        const agevSelect = blocco.querySelector('.tipo-agevolazione');
-        const optAccorpamento = blocco.querySelector('.opt-accorpamento');
-        const inputRendita = blocco.querySelector('.rendita-catastale');
-        
-        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa';
-        const categoria = selectElement.value;
-        const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8');
-        const isLusso = (categoria === 'A1');
-        const isInCostruzione = (categoria === 'F3' || categoria === 'F4');
-        const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
-        
-        if (isPertinenza) { 
-            optAccorpamento.style.display = 'none'; 
-            if(agevSelect.value === 'accorpamento') agevSelect.value = 'nessuna'; 
-        } else { 
-            optAccorpamento.style.display = 'block'; 
-        }
-
-        if (isLusso || isStrumentale || isSocieta) {
-            agevSelect.value = 'nessuna'; agevSelect.disabled = true; agevSelect.closest('.box-agevolazione').style.opacity = "0.5";
-        } else {
-            agevSelect.disabled = false; agevSelect.closest('.box-agevolazione').style.opacity = "1";
-        }
-
+        const blocco = selectElement.closest('.blocco-immobile'); const agevSelect = blocco.querySelector('.tipo-agevolazione'); const optAccorpamento = blocco.querySelector('.opt-accorpamento'); const inputRendita = blocco.querySelector('.rendita-catastale');
+        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa'; const categoria = selectElement.value; const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8'); const isLusso = (categoria === 'A1'); const isInCostruzione = (categoria === 'F3' || categoria === 'F4'); const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
+        if (isPertinenza) { optAccorpamento.style.display = 'none'; if(agevSelect.value === 'accorpamento') agevSelect.value = 'nessuna'; } else { optAccorpamento.style.display = 'block'; }
+        if (isLusso || isStrumentale || isSocieta) { agevSelect.value = 'nessuna'; agevSelect.disabled = true; agevSelect.closest('.box-agevolazione').style.opacity = "0.5"; } else { agevSelect.disabled = false; agevSelect.closest('.box-agevolazione').style.opacity = "1"; }
         gestisciTipoAgevolazione(agevSelect);
-
-        if (isStrumentale || isInCostruzione || isSocieta) {
-            inputRendita.disabled = true; inputRendita.value = ""; inputRendita.placeholder = "Calcolo forzato su Prezzo"; inputRendita.style.background = "#eeeeee";
-        } else {
-            inputRendita.disabled = false; inputRendita.placeholder = "es. 500,00"; inputRendita.style.background = "#fdfdfd";
-        }
+        if (isStrumentale || isInCostruzione || isSocieta) { inputRendita.disabled = true; inputRendita.value = ""; inputRendita.placeholder = "Calcolo forzato su Prezzo"; inputRendita.style.background = "#eeeeee"; } else { inputRendita.disabled = false; inputRendita.placeholder = "es. 500,00"; inputRendita.style.background = "#fdfdfd"; }
     }
 
     let contatoreImmobili = 0;
@@ -267,40 +161,18 @@
         contatoreImmobili++; const contenitore = document.getElementById('contenitoreImmobili'); const blocco = document.createElement('div'); blocco.className = 'blocco-immobile';
         blocco.innerHTML = `
             <h4 style="margin-top: 0; color: #2c3e50;">Fabbricato/Cantiere #${contatoreImmobili} <button type="button" class="danger" onclick="this.parentElement.parentElement.remove(); aggiornaStatoAcquirente();">X</button></h4>
-            <label>Categoria Catastale:</label>
-            <select class="cat-catastale" onchange="bloccaNonAgevolabili(this)">
-                <optgroup label="Abitativi"><option value="A2">A/2 - Abitazione di tipo civile</option><option value="A3">A/3 - Abitazione di tipo economico</option><option value="A1">A/1 - Abitazione di tipo signorile (Lusso)</option></optgroup>
-                <optgroup label="Commerciali e Uffici"><option value="C1">C/1 - Negozio / Locale Commerciale</option><option value="A10">A/10 - Ufficio / Studio Privato</option></optgroup>
-                <optgroup label="Industriali e Artigianali"><option value="C3">C/3 - Laboratori per arti e mestieri</option><option value="D1">D/1 - Opifici / Capannoni industriali</option><option value="D8">D/8 - Fabbricati commerciali grandi</option></optgroup>
-                <optgroup label="In Costruzione (Senza Rendita)"><option value="F3">F/3 - Fabbricato in corso di costruzione</option><option value="F4">F/4 - Fabbricato in corso di definizione</option></optgroup>
-                <optgroup label="Pertinenze"><option value="C2">C/2 - Cantina / Magazzino</option><option value="C6">C/6 - Garage / Box Auto</option><option value="C7">C/7 - Tettoia</option></optgroup>
-            </select>
+            <label>Categoria Catastale:</label><select class="cat-catastale" onchange="bloccaNonAgevolabili(this)"><optgroup label="Abitativi"><option value="A2">A/2 - Abitazione di tipo civile</option><option value="A3">A/3 - Abitazione di tipo economico</option><option value="A1">A/1 - Abitazione di tipo signorile (Lusso)</option></optgroup><optgroup label="Commerciali e Uffici"><option value="C1">C/1 - Negozio / Locale Commerciale</option><option value="A10">A/10 - Ufficio / Studio Privato</option></optgroup><optgroup label="Industriali e Artigianali"><option value="C3">C/3 - Laboratori per arti e mestieri</option><option value="D1">D/1 - Opifici / Capannoni industriali</option><option value="D8">D/8 - Fabbricati commerciali grandi</option></optgroup><optgroup label="In Costruzione (Senza Rendita)"><option value="F3">F/3 - Fabbricato in corso di costruzione</option><option value="F4">F/4 - Fabbricato in corso di definizione</option></optgroup><optgroup label="Pertinenze"><option value="C2">C/2 - Cantina / Magazzino</option><option value="C6">C/6 - Garage / Box Auto</option><option value="C7">C/7 - Tettoia</option></optgroup></select>
             <label>Diritto Acquistato:</label><select class="tipo-diritto" autocomplete="off" onchange="gestisciDiritto(this)"><option value="piena">Piena Proprietà</option><option value="nuda">Nuda Proprietà</option><option value="usufrutto">Usufrutto</option></select>
             <div class="box-data-nascita" style="display:none; padding: 10px; background: #fff3e0; border-radius: 6px; margin-top: 5px; border: 1px solid #ffcc80;"><label style="color:#d35400; margin-top:0;">Data Nascita Usufruttuario (per calcolo età):</label><input type="date" class="data-nascita-usufruttuario" autocomplete="off"></div>
-            
             <div style="display: flex; gap: 10px; margin-top: 15px;"><div style="flex: 1;"><label style="font-size: 0.8rem;">Quota Acquistata Totale (%): <span class="tooltip" title="Es. 50">i</span></label><input type="number" class="quota-totale" value="100" min="0.01" max="100" step="0.01" autocomplete="off" oninput="controllaQuote(this.parentElement.parentElement.nextElementSibling.querySelector('.quota-agevolata'))"></div></div>
-            
             <div class="box-agevolazione" style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #d6eaf8;">
                 <label style="color: #2980b9; margin-top: 0;">Agevolazione Fiscale Richiesta:</label>
-                <select class="tipo-agevolazione" autocomplete="off" onchange="gestisciTipoAgevolazione(this)">
-                    <option value="nessuna">Nessuna Agevolazione (Tassazione Ordinaria)</option>
-                    <option value="ordinaria" selected>Agevolazione Prima Casa (Standard)</option>
-                    <option value="accorpamento" class="opt-accorpamento">Prima Casa per ACCORPAMENTO (Cassazione)</option>
-                </select>
-                
-                <div class="help-accorpamento" style="display:none; background:#fff9c4; border-left:4px solid #f39c12; padding:10px; margin-top:10px; font-size:0.85rem; color:#d35400;">
-                    💡 <strong>AIUTO CONTESTUALE:</strong> L'agevolazione su un ulteriore immobile abitativo è permessa dalla giurisprudenza della Suprema Corte di Cassazione, ma richiede che l'acquirente si impegni espressamente in atto a <strong>fondere catastalmente</strong> le unità, creando un'unica abitazione non di lusso.
-                </div>
-
-                <div class="box-quota-agevolata" style="display:block; margin-top: 10px;">
-                    <label style="font-size: 0.8rem; color:#2980b9;">Di cui Quota Agevolata (%):</label>
-                    <input type="number" class="quota-agevolata" value="100" min="0" max="100" step="0.01" autocomplete="off" oninput="controllaQuote(this)">
-                </div>
+                <select class="tipo-agevolazione" autocomplete="off" onchange="gestisciTipoAgevolazione(this)"><option value="nessuna">Nessuna Agevolazione (Tassazione Ordinaria)</option><option value="ordinaria" selected>Agevolazione Prima Casa (Standard)</option><option value="accorpamento" class="opt-accorpamento">Prima Casa per ACCORPAMENTO (Cassazione)</option></select>
+                <div class="help-accorpamento" style="display:none; background:#fff9c4; border-left:4px solid #f39c12; padding:10px; margin-top:10px; font-size:0.85rem; color:#d35400;">💡 <strong>AIUTO CONTESTUALE:</strong> L'agevolazione su un ulteriore immobile abitativo è permessa dalla giurisprudenza della Suprema Corte di Cassazione, ma richiede che l'acquirente si impegni espressamente in atto a <strong>fondere catastalmente</strong> le unità, creando un'unica abitazione non di lusso.</div>
+                <div class="box-quota-agevolata" style="display:block; margin-top: 10px;"><label style="font-size: 0.8rem; color:#2980b9;">Di cui Quota Agevolata (%):</label><input type="number" class="quota-agevolata" value="100" min="0" max="100" step="0.01" autocomplete="off" oninput="controllaQuote(this)"></div>
             </div>
-
             <label style="margin-top:15px;">Rendita Catastale Totale (del 100%) (€):</label><input type="text" class="input-valuta rendita-catastale" placeholder="es. 500,00" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-            <label>Prezzo pattuito per la quota acquistata (€):</label><input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
-        `;
+            <label>Prezzo pattuito per la quota acquistata (€):</label><input type="text" class="input-valuta prezzo-dichiarato" placeholder="es. 150.000" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">`;
         contenitore.appendChild(blocco); aggiornaStatoAcquirente(); 
     }
 
@@ -316,33 +188,16 @@
         contenitore.appendChild(blocco);
     }
 
-    function aggiungiSpesaExtra() {
-        const c = document.getElementById('contenitoreSpeseExtra'); const r = document.createElement('div'); r.className = 'riga-spesa'; r.style = "display: flex; gap: 10px; margin-bottom: 10px;";
-        r.innerHTML = `<input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>`;
-        c.appendChild(r);
-    }
-    
-    function aggiungiSpesaExtraMutuo() {
-        const c = document.getElementById('contenitoreSpeseExtraMutuo'); const r = document.createElement('div'); r.className = 'riga-spesa-mutuo'; r.style = "display: flex; gap: 10px; margin-bottom: 10px;";
-        r.innerHTML = `<input type="text" class="nome-spesa-m" placeholder="Descrizione spesa Mutuo" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa-m input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>`;
-        c.appendChild(r);
-    }
+    function aggiungiSpesaExtra() { const c = document.getElementById('contenitoreSpeseExtra'); const r = document.createElement('div'); r.className = 'riga-spesa'; r.style = "display: flex; gap: 10px; margin-bottom: 10px;"; r.innerHTML = `<input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>`; c.appendChild(r); }
+    function aggiungiSpesaExtraMutuo() { const c = document.getElementById('contenitoreSpeseExtraMutuo'); const r = document.createElement('div'); r.className = 'riga-spesa-mutuo'; r.style = "display: flex; gap: 10px; margin-bottom: 10px;"; r.innerHTML = `<input type="text" class="nome-spesa-m" placeholder="Descrizione spesa Mutuo" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa-m input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>`; c.appendChild(r); }
 
     function calcolaArchivioMatematico(tipoAtto, percentuale, massa) {
         const tab = (tipoAtto === 'privato') ? PRIV : PUB; const scaglione = tab.find(x => massa <= x.max) || tab[tab.length - 1]; const onorario = scaglione.h[percentuale] || 0;
         const cassa = Math.round(onorario * scaglione.c * 100) / 100; const baseIva = cassa + Math.round(onorario * 0.04 * 100) / 100 + Math.round(onorario * 0.002 * 100) / 100 + Math.round(onorario * 0.06 * 100) / 100;
         return (Math.round(onorario * 0.10 * 100) / 100) + baseIva + Math.round(baseIva * 0.22 * 100) / 100;
     }
-
-    function aggiornaTassaArchivioCV() {
-        const tipo = document.getElementById('tipoAttoCV').value; const pct = document.getElementById('pctAttoCV').value;
-        document.getElementById('tassaArchivioInput_cv').value = formatNumberStr(calcolaArchivioMatematico(tipo, pct, window.massaCV)); aggiornaTotaliDinamici();
-    }
-
-    function aggiornaTassaArchivioMutuo() {
-        const tipo = document.getElementById('tipoAttoMutuo').value; const pct = document.getElementById('pctAttoMutuo').value;
-        document.getElementById('tassaArchivioInput_m').value = formatNumberStr(calcolaArchivioMatematico(tipo, pct, window.massaMutuo)); aggiornaTotaliDinamici();
-    }
+    function aggiornaTassaArchivioCV() { const tipo = document.getElementById('tipoAttoCV').value; const pct = document.getElementById('pctAttoCV').value; document.getElementById('tassaArchivioInput_cv').value = formatNumberStr(calcolaArchivioMatematico(tipo, pct, window.massaCV)); aggiornaTotaliDinamici(); }
+    function aggiornaTassaArchivioMutuo() { const tipo = document.getElementById('tipoAttoMutuo').value; const pct = document.getElementById('pctAttoMutuo').value; document.getElementById('tassaArchivioInput_m').value = formatNumberStr(calcolaArchivioMatematico(tipo, pct, window.massaMutuo)); aggiornaTotaliDinamici(); }
 
     function avviaCalcoloPreventivo() {
         const isMutuoAttivo = document.getElementById('checkMutuo').checked; const regimeVenditore = document.getElementById('regimeFiscale').value; const tipoAcquirente = document.getElementById('tipoAcquirente').value; const isCondizionata = document.getElementById('condizioneSospensiva').checked;
@@ -354,35 +209,28 @@
         document.querySelectorAll('.tipo-diritto').forEach(select => { if (select.value !== 'piena') { if (!select.closest('.blocco-immobile, .blocco-terreno').querySelector('.data-nascita-usufruttuario').value) erroreData = true; } });
         if (erroreData) { alert("ERRORE: Inserisci obbligatoriamente la data di nascita per Nuda Proprietà o Usufrutto."); return; }
 
-        // PARSING IMMOBILI E LOGICA INTELLIGENTE
         let immobiliData = [];
         blocchiImmobiliHTML.forEach((blocco, index) => {
             let tipoAgev = blocco.querySelector('.tipo-agevolazione').value;
             immobiliData.push({
-                id: index + 1,
-                categoria: blocco.querySelector('.cat-catastale').value,
+                id: index + 1, categoria: blocco.querySelector('.cat-catastale').value,
                 qTot: parseFloat(blocco.querySelector('.quota-totale').value) || 100,
                 qAgev: (tipoAgev !== 'nessuna') ? (parseFloat(blocco.querySelector('.quota-agevolata').value) || 0) : 0,
                 tipoAgev: tipoAgev,
                 rendita: parseFloat(blocco.querySelector('.rendita-catastale').value.replace(/\./g, "").replace(",", ".")) || 0,
                 prezzo: parseFloat(blocco.querySelector('.prezzo-dichiarato').value.replace(/\./g, "").replace(",", ".")) || 0,
-                tipoDir: blocco.querySelector('.tipo-diritto').value,
-                dataNas: blocco.querySelector('.data-nascita-usufruttuario').value,
+                tipoDir: blocco.querySelector('.tipo-diritto').value, dataNas: blocco.querySelector('.data-nascita-usufruttuario').value,
                 isStrumentale: false, isInCostruzione: false, qOrd: 0, notaOttimizzata: false
             });
         });
 
-        let notaPertinenze = false;
-        let notaAccorpamento = immobiliData.some(x => x.tipoAgev === 'accorpamento');
+        let notaPertinenze = false; let notaAccorpamento = immobiliData.some(x => x.tipoAgev === 'accorpamento');
 
-        // OTTIMIZZAZIONE PERTINENZE
         ['C2', 'C6', 'C7'].forEach(cat => {
             let agevolati = immobiliData.filter(x => x.categoria === cat && x.qAgev > 0);
             if (agevolati.length > 1) {
                 agevolati.sort((a,b) => (b.rendita * (b.qAgev/100)) - (a.rendita * (a.qAgev/100)));
-                for(let i=1; i<agevolati.length; i++) {
-                    agevolati[i].qOrd = agevolati[i].qTot; agevolati[i].qAgev = 0; agevolati[i].notaOttimizzata = true; notaPertinenze = true;
-                }
+                for(let i=1; i<agevolati.length; i++) { agevolati[i].qOrd = agevolati[i].qTot; agevolati[i].qAgev = 0; agevolati[i].notaOttimizzata = true; notaPertinenze = true; }
             }
         });
 
@@ -391,35 +239,20 @@
         window.massaCV = 0; let totaleRegistroProporzionale = 0; let haPrimaCasa = false; let riepilogoHTML = ""; let totaleIvaVenditore = 0; let flagStrumentaleDaImpresa = false; let imponibileStrumentaliPerIpoCatastale = 0; let totaleCatastalePPC = 0;
 
         immobiliData.forEach(imm => {
-            imm.qOrd = imm.qOrd > 0 ? imm.qOrd : (imm.qTot - imm.qAgev);
-            if (imm.qAgev > 0) haPrimaCasa = true;
-            window.massaCV += imm.prezzo;
-            
-            imm.isStrumentale = (imm.categoria === 'A10' || imm.categoria === 'C1' || imm.categoria === 'C3' || imm.categoria === 'D1' || imm.categoria === 'D8');
-            imm.isInCostruzione = (imm.categoria === 'F3' || imm.categoria === 'F4');
+            imm.qOrd = imm.qOrd > 0 ? imm.qOrd : (imm.qTot - imm.qAgev); if (imm.qAgev > 0) haPrimaCasa = true; window.massaCV += imm.prezzo;
+            imm.isStrumentale = (imm.categoria === 'A10' || imm.categoria === 'C1' || imm.categoria === 'C3' || imm.categoria === 'D1' || imm.categoria === 'D8'); imm.isInCostruzione = (imm.categoria === 'F3' || imm.categoria === 'F4');
 
             let pctDiritto = 1.0; let etichettaDiritto = "";
-            if (imm.tipoDir !== 'piena') {
-                let quote = getPercentualiDiritto(calcolaEta(imm.dataNas));
-                if (imm.tipoDir === 'nuda') { pctDiritto = quote.np; etichettaDiritto = `<br><span style="color:#d35400;">(Nuda Proprietà)</span>`; } 
-                else { pctDiritto = quote.us; etichettaDiritto = `<br><span style="color:#d35400;">(Usufrutto)</span>`; }
-            }
+            if (imm.tipoDir !== 'piena') { let quote = getPercentualiDiritto(calcolaEta(imm.dataNas)); if (imm.tipoDir === 'nuda') { pctDiritto = quote.np; etichettaDiritto = `<br><span style="color:#d35400;">(Nuda Proprietà)</span>`; } else { pctDiritto = quote.us; etichettaDiritto = `<br><span style="color:#d35400;">(Usufrutto)</span>`; } }
 
             let usaPrezzoValore = false; let imponibileRegistroPC = imm.prezzo * (imm.qAgev / imm.qTot); let imponibileRegistroOrd = imm.prezzo * (imm.qOrd / imm.qTot);
-            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !imm.isStrumentale && !imm.isInCostruzione) {
-                usaPrezzoValore = true;
-                imponibileRegistroPC = imm.rendita * 115.5 * (imm.qAgev / 100) * pctDiritto;
-                imponibileRegistroOrd = imm.rendita * 126 * (imm.qOrd / 100) * pctDiritto;
-            }
+            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !imm.isStrumentale && !imm.isInCostruzione) { usaPrezzoValore = true; imponibileRegistroPC = imm.rendita * 115.5 * (imm.qAgev / 100) * pctDiritto; imponibileRegistroOrd = imm.rendita * 126 * (imm.qOrd / 100) * pctDiritto; }
 
             let extraNota = imm.notaOttimizzata ? `<strong style="color:#e74c3c;"> (Ottimizzazione Categoria Applicata)</strong>` : ``;
             riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>Fabbricato #${imm.id} (${imm.categoria})</strong>${extraNota} - Quota: ${imm.qTot}% ${etichettaDiritto}<br>`;
 
             if (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa') {
-                if (imm.isStrumentale && regimeVenditore === 'registro_impresa') {
-                    flagStrumentaleDaImpresa = true; imponibileStrumentaliPerIpoCatastale += imm.prezzo;
-                    riepilogoHTML += `<strong style="color: #e67e22;">IMMOBILE STRUMENTALE:</strong> Prezzo ${formatEuro(imm.prezzo)}.`;
-                } else {
+                if (imm.isStrumentale && regimeVenditore === 'registro_impresa') { flagStrumentaleDaImpresa = true; imponibileStrumentaliPerIpoCatastale += imm.prezzo; riepilogoHTML += `<strong style="color: #e67e22;">IMMOBILE STRUMENTALE:</strong> Prezzo ${formatEuro(imm.prezzo)}.`; } else {
                     let calcText = usaPrezzoValore ? "Base Rendita" : "Base Prezzo";
                     if (imm.qAgev > 0) { let impSingolaPC = imponibileRegistroPC * 0.02; totaleRegistroProporzionale += impSingolaPC; riepilogoHTML += `<span style="color: #27ae60;">-> Q. Agevolata: ${calcText} ${formatEuro(imponibileRegistroPC)} x 2% = <strong>${formatEuro(impSingolaPC)}</strong></span><br>`; }
                     if (imm.qOrd > 0) { let impSingolaOrd = imponibileRegistroOrd * 0.09; totaleRegistroProporzionale += impSingolaOrd; riepilogoHTML += `<span style="color: #7f8c8d;">-> Q. Ordinaria: ${calcText} ${formatEuro(imponibileRegistroOrd)} x 9% = <strong>${formatEuro(impSingolaOrd)}</strong></span><br>`; }
@@ -429,19 +262,13 @@
                 if (imm.qAgev > 0) { let ivaSingolaPC = (imm.prezzo * (imm.qAgev/imm.qTot)) * 0.04; totaleIvaVenditore += ivaSingolaPC; riepilogoHTML += `<span style="color: #e74c3c; font-weight:bold;">-> IVA PC: ${formatEuro((imm.prezzo * (imm.qAgev/imm.qTot)))} x 4% = ${formatEuro(ivaSingolaPC)}</span><br>`; }
                 if (imm.qOrd > 0) { let ivaSingolaOrd = (imm.prezzo * (imm.qOrd/imm.qTot)) * aliqOrd; totaleIvaVenditore += ivaSingolaOrd; riepilogoHTML += `<span style="color: #e74c3c; font-weight:bold;">-> IVA Ord: ${formatEuro((imm.prezzo * (imm.qOrd/imm.qTot)))} x ${aliqOrd*100}% = ${formatEuro(ivaSingolaOrd)}</span><br>`; }
                 if (imm.isStrumentale) { flagStrumentaleDaImpresa = true; imponibileStrumentaliPerIpoCatastale += imm.prezzo; }
-            }
-            riepilogoHTML += `</div>`;
+            } riepilogoHTML += `</div>`;
         });
 
         for (let i = 0; i < blocchiTerreniHTML.length; i++) {
-            const blocco = blocchiTerreniHTML[i]; const num = i + 1; const selectTipo = blocco.querySelector('.tipo-terreno'); const tipoValore = selectTipo.value;
-            const nomeTerreno = selectTipo.options[selectTipo.selectedIndex].text.split("(")[0].trim();
-            const prezzo = parseFloat(blocco.querySelector('.prezzo-terreno').value.replace(/\./g, "").replace(",", ".")) || 0;
-            window.massaCV += prezzo;
-            if (tipoValore === 'agricolo_ord') { totaleRegistroProporzionale += prezzo * 0.15; } 
-            else if (tipoValore === 'agricolo_ppc') { totaleCatastalePPC += prezzo * 0.01; } 
-            else if (tipoValore === 'edificabile_privato') { totaleRegistroProporzionale += prezzo * 0.09; } 
-            else if (tipoValore === 'edificabile_iva') { totaleIvaVenditore += prezzo * 0.22; }
+            const blocco = blocchiTerreniHTML[i]; const selectTipo = blocco.querySelector('.tipo-terreno'); const tipoValore = selectTipo.value;
+            const prezzo = parseFloat(blocco.querySelector('.prezzo-terreno').value.replace(/\./g, "").replace(",", ".")) || 0; window.massaCV += prezzo;
+            if (tipoValore === 'agricolo_ord') { totaleRegistroProporzionale += prezzo * 0.15; } else if (tipoValore === 'agricolo_ppc') { totaleCatastalePPC += prezzo * 0.01; } else if (tipoValore === 'edificabile_privato') { totaleRegistroProporzionale += prezzo * 0.09; } else if (tipoValore === 'edificabile_iva') { totaleIvaVenditore += prezzo * 0.22; }
         }
 
         let futuroRegistro = 0, futuroIpotecaria = 0, futuroCatastale = 0; let hasPPC = (totaleCatastalePPC > 0);
@@ -458,16 +285,13 @@
 
         if (isCondizionata) {
             impostaRegistro = 200; impostaIpotecaria = 0; impostaCatastale = 0; impostaBollo = 155; tassaTrascrizione = 235;
-            let creditoUtilizzatoFuturo = 0;
-            if (creditoDichiarato > 0) { let capienzaFutura = futuroRegistro * (quotaCredito / 100); creditoUtilizzatoFuturo = Math.min(creditoDichiarato, capienzaFutura); futuroRegistro -= creditoUtilizzatoFuturo; }
-            let totaleImposteFutureDaPagare = Math.max(0, (futuroRegistro - 200) + futuroIpotecaria + futuroCatastale);
-            avvisoCondizioneHTML = `<div class="box-avveramento"><h4>⚠️ ATTO SOTTOPOSTO A CONDIZIONE SOSPENSIVA</h4><p>Totale futuro: <strong>${formatEuro(totaleImposteFutureDaPagare)}</strong>.</p></div>`;
+            let creditoUtilizzatoFuturo = 0; if (creditoDichiarato > 0) { let capienzaFutura = futuroRegistro * (quotaCredito / 100); creditoUtilizzatoFuturo = Math.min(creditoDichiarato, capienzaFutura); futuroRegistro -= creditoUtilizzatoFuturo; }
+            avvisoCondizioneHTML = `<div class="box-avveramento"><h4>⚠️ ATTO SOTTOPOSTO A CONDIZIONE SOSPENSIVA</h4><p>Totale futuro: <strong>${formatEuro(Math.max(0, (futuroRegistro - 200) + futuroIpotecaria + futuroCatastale))}</strong>.</p></div>`;
         } else {
             impostaRegistro = futuroRegistro; impostaIpotecaria = futuroIpotecaria; impostaCatastale = futuroCatastale;
             if (creditoDichiarato > 0) { let capienzaMassima = impostaRegistro * (quotaCredito / 100); creditoUtilizzatoOggi = Math.min(creditoDichiarato, capienzaMassima); impostaRegistro -= creditoUtilizzatoOggi; }
             if (regimeVenditore !== 'iva_impresa' && scomputoPreliminare > 0) { preliminareScomputatoOggi = Math.min(scomputoPreliminare, impostaRegistro); impostaRegistro -= preliminareScomputatoOggi; }
-            if (regimeVenditore === 'iva_impresa') { impostaBollo = 230; tassaTrascrizione = 90; } 
-            else { if (totaleRegistroProporzionale > 0 || (hasPPC && !flagStrumentaleDaImpresa)) { impostaBollo = 0; tassaTrascrizione = 0; } else { impostaBollo = 155; tassaTrascrizione = 90; } }
+            if (regimeVenditore === 'iva_impresa') { impostaBollo = 230; tassaTrascrizione = 90; } else { if (totaleRegistroProporzionale > 0 || (hasPPC && !flagStrumentaleDaImpresa)) { impostaBollo = 0; tassaTrascrizione = 0; } else { impostaBollo = 155; tassaTrascrizione = 90; } }
         }
 
         window.tasseFisseBaseCV = impostaRegistro + impostaIpotecaria + impostaCatastale;
@@ -479,14 +303,11 @@
         }
         if (speseExtraHTMLCV) { speseExtraHTMLCV = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Spese Vive</td></tr>` + speseExtraHTMLCV; }
 
-        let defaultPctCV = haPrimaCasa ? "70%" : "100%";
-        const valArchivioCV = calcolaArchivioMatematico('pubblico', defaultPctCV, window.massaCV);
+        let defaultPctCV = haPrimaCasa ? "70%" : "100%"; const valArchivioCV = calcolaArchivioMatematico('pubblico', defaultPctCV, window.massaCV);
 
-        // MUTUO
         let htmlMutuo = ""; window.tasseFisseBaseMutuo = 0;
         if (isMutuoAttivo) {
-            let importoMutuo = parseFloat(document.getElementById('importoMutuo').value.replace(/\./g, "").replace(",", ".")) || 0;
-            window.massaMutuo = parseFloat(document.getElementById('importoIpoteca').value.replace(/\./g, "").replace(",", ".")) || 0;
+            let importoMutuo = parseFloat(document.getElementById('importoMutuo').value.replace(/\./g, "").replace(",", ".")) || 0; window.massaMutuo = parseFloat(document.getElementById('importoIpoteca').value.replace(/\./g, "").replace(",", ".")) || 0;
             let isPCMutuo = document.getElementById('tipoMutuo').value === 'pc'; let defaultPctMutuo = isPCMutuo ? "50%" : "100%";
             let valArchivioM = calcolaArchivioMatematico('pubblico', defaultPctMutuo, window.massaMutuo);
 
@@ -504,12 +325,7 @@
                 <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
                     ${speseExtraHTMLM}
                     <tr>
-                        <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Mutuo al:
-                            <select id="pctAttoMutuo" onchange="aggiornaTassaArchivioMutuo()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #f4ecf7;">
-                                <option value="100%" ${defaultPctMutuo==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctMutuo==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctMutuo==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctMutuo==='25%'?'selected':''}>25%</option>
-                            </select>
-                            <select id="tipoAttoMutuo" onchange="aggiornaTassaArchivioMutuo()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #f4ecf7;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select>
-                        </td>
+                        <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Mutuo al: <select id="pctAttoMutuo" onchange="aggiornaTassaArchivioMutuo()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #f4ecf7;"><option value="100%" ${defaultPctMutuo==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctMutuo==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctMutuo==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctMutuo==='25%'?'selected':''}>25%</option></select><select id="tipoAttoMutuo" onchange="aggiornaTassaArchivioMutuo()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #f4ecf7;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select></td>
                         <td style="text-align: right;"><div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;"><span style="font-weight: bold; color: #555;">€</span><input type="text" id="tassaArchivioInput_m" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(valArchivioM)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div><div id="print_tassaArchivioInput_m" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(valArchivioM)}</div></td>
                     </tr>
                     <tr style="border-top: 2px solid #8e44ad; background: #fdfdfd;"><td style="padding: 10px 0; font-weight: bold; font-size: 1.05rem;">TOTALE TASSE E SPESE MUTUO:</td><td id="totaleTasseSpeseMutuoLBL" style="text-align: right; font-weight: bold; font-size: 1.05rem; color: #8e44ad;">€ 0,00</td></tr>
@@ -559,11 +375,7 @@
 
                 ${speseExtraHTMLCV}
                 <tr>
-                    <td style="padding: 5px 0; padding-left: 10px; color: #555;">
-                        - Tassa Archivio Vendita al: 
-                        <select id="pctAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="100%" ${defaultPctCV==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctCV==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctCV==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctCV==='25%'?'selected':''}>25%</option></select>
-                        <select id="tipoAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select>
-                    </td>
+                    <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Vendita al: <select id="pctAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="100%" ${defaultPctCV==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctCV==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctCV==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctCV==='25%'?'selected':''}>25%</option></select><select id="tipoAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select></td>
                     <td style="text-align: right;"><div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;"><span style="font-weight: bold; color: #555;">€</span><input type="text" id="tassaArchivioInput_cv" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(valArchivioCV)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div><div id="print_tassaArchivioInput_cv" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(valArchivioCV)}</div></td>
                 </tr>
                 <tr style="border-top: 2px solid #333; background: #fdfdfd;"><td style="padding: 10px 0; font-weight: bold; font-size: 1.05rem;">TOTALE TASSE E SPESE VENDITA:</td><td id="totaleTasseSpeseLBL_cv" style="text-align: right; font-weight: bold; font-size: 1.05rem; color: #2c3e50;">€ 0,00</td></tr>
@@ -584,7 +396,13 @@
                     <span id="valoreTotaleStampa" class="valore-totale-stampa" style="margin-left: 10px;">€ 0,00</span>
                     <span class="linea-stampa-vuota"></span>
                 </h2>
-                <div id="dettaglioIva" style="font-size: 0.85rem; color: #bdc3c7; margin-top: 5px;">di cui IVA 22% scorporata: € 0,00</div>
+                <div id="riepilogoContabile" style="font-size: 0.65rem; color: #bdc3c7; margin-top: 10px; border-top: 1px dotted #7f8c8d; padding-top: 5px; display: none;">
+                    <strong>RIEPILOGO CONTABILE PER FATTURAZIONE:</strong> 
+                    Imponibile Netto: <span id="cont_netto">€ 0,00</span> | 
+                    Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | 
+                    IVA (22%): <span id="cont_iva">€ 0,00</span> | 
+                    Anticipazioni Esenti (Art. 15): <span id="cont_esenti">€ 0,00</span>
+                </div>
             </div>
         `;
         aggiornaTotaliDinamici();
@@ -625,9 +443,24 @@
         const granTotale = totTasseCV + onor_cv + totTasseM + onor_m;
         const onorariTotali = onor_cv + onor_m;
         document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
-        document.getElementById('dettaglioIva').innerText = "di cui IVA 22% scorporata dagli onorari: " + formatEuro(onorariTotali - (onorariTotali / 1.22));
 
-        if (onorariTotali === 0) { document.body.classList.add('onorario-vuoto'); } else { document.body.classList.remove('onorario-vuoto'); }
+        // CALCOLO INGEGNERIA INVERSA PER FATTURA
+        if (onorariTotali > 0) {
+            const imponibileNetto = onorariTotali / 1.2688;
+            const cassaNaz = imponibileNetto * 0.04;
+            const iva = (imponibileNetto + cassaNaz) * 0.22;
+            const totaleEsenti = totTasseCV + totTasseM;
+            
+            document.getElementById('riepilogoContabile').style.display = 'block';
+            document.getElementById('cont_netto').innerText = formatEuro(imponibileNetto);
+            document.getElementById('cont_cassa').innerText = formatEuro(cassaNaz);
+            document.getElementById('cont_iva').innerText = formatEuro(iva);
+            document.getElementById('cont_esenti').innerText = formatEuro(totaleEsenti);
+            document.body.classList.remove('onorario-vuoto');
+        } else {
+            document.getElementById('riepilogoContabile').style.display = 'none';
+            document.body.classList.add('onorario-vuoto');
+        }
     }
 
     function salvaTesto() {
@@ -649,8 +482,15 @@
         
         let onCV = document.getElementById('onorarioLibero_cv'); testo += "\nOnorario Compravendita: \t€ " + (onCV && onCV.value ? onCV.value : "0,00") + "\n";
         let onM = document.getElementById('onorarioLibero_m'); if (onM) { testo += "Onorario Mutuo: \t€ " + (onM.value ? onM.value : "0,00") + "\n"; }
-        
         testo += "GRAN TOTALE: \t" + document.getElementById('valoreTotaleStampa').innerText + "\n";
+        
+        if (document.getElementById('riepilogoContabile') && document.getElementById('riepilogoContabile').style.display === 'block') {
+            testo += "\n--------------------------------------\nRIEPILOGO CONTABILE PER FATTURAZIONE:\n";
+            testo += "Imponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\n";
+            testo += "Cassa Notariato (4%): \t" + document.getElementById('cont_cassa').innerText + "\n";
+            testo += "IVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\n";
+            testo += "Anticipazioni Esenti (Art. 15): " + document.getElementById('cont_esenti').innerText + "\n";
+        }
         
         let blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
         let link = document.createElement("a"); link.href = URL.createObjectURL(blob);
