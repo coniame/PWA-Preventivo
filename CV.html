@@ -88,11 +88,13 @@
         <h3>Fase 2: Composizione Atto e Mutuo</h3>
         <div id="contenitoreImmobili"></div>
         <div class="flex-buttons" style="margin-top: 0;"><button type="button" class="secondary" onclick="aggiungiImmobile()" style="background: #34495e;">+ Fabbricato</button><button type="button" class="secondary" onclick="aggiungiTerreno()" style="background: #27ae60;">+ Terreno</button></div>
+        
         <div style="border-top: 2px solid #ecf0f1; margin-top: 20px; padding-top: 15px;">
             <label>Spese vive COMPRAVENDITA (Visure, APE, ecc.):</label>
             <div id="contenitoreSpeseExtra"><div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px;"><input type="text" class="nome-spesa" value="Spese Visure e Ispezioni" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"></div></div>
             <button type="button" class="secondary" onclick="aggiungiSpesaExtra()" style="padding: 8px; font-size: 0.9rem;">+ Aggiungi altra spesa</button>
         </div>
+        
         <div style="background: #eafaf1; border: 2px solid #2ecc71; padding: 15px; margin-top: 20px; border-radius: 8px;">
             <label style="color: #27ae60; margin-top: 0;">💰 Credito d'Imposta Prima Casa (Opzionale):</label>
             <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;"><input type="text" id="importoCredito" class="input-valuta" placeholder="Importo €" style="flex: 2; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><span style="font-size: 0.9rem; font-weight: bold; color: #2c3e50;">su quota al</span><input type="number" id="quotaCredito" placeholder="100" value="100" min="1" max="100" style="flex: 1; text-align: center;" autocomplete="off"><span style="font-size: 0.9rem; font-weight: bold; color: #2c3e50;">%</span></div>
@@ -109,7 +111,11 @@
             <label>Importo Ipoteca Iscritta (€):</label><input type="text" id="importoIpoteca" class="input-valuta" placeholder="es. 200.000,00" style="text-align: right; font-weight: bold; color: #8e44ad;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             <label style="margin-top: 15px;">Spese vive extra SOLO PER MUTUO (se previste):</label><div id="contenitoreSpeseExtraMutuo"></div><button type="button" class="secondary" onclick="aggiungiSpesaExtraMutuo()" style="padding: 8px; font-size: 0.9rem; background: #af7ac5; color: white;">+ Aggiungi spesa Mutuo</button>
         </div>
-        <div class="flex-buttons"><button type="button" class="secondary" onclick="vaiAlloStep(1)">⬅ Indietro</button><button type="button" onclick="avviaCalcoloPreventivo()">Calcola Preventivo Finale ➔</button></div>
+        <div class="flex-buttons">
+            <button type="button" class="secondary" onclick="vaiAlloStep(1)">⬅ Indietro</button>
+            <button type="button" class="secondary" onclick="esportaBozza()" style="background: #f39c12; color: #fff;">💾 Esporta Bozza</button>
+            <button type="button" onclick="avviaCalcoloPreventivo()">Calcola Preventivo Finale ➔</button>
+        </div>
     </section>
 
     <section id="step3" class="wizard-step">
@@ -132,7 +138,17 @@
     function calcolaEta(dataNascitaStr) { const oggi = new Date(); const nascita = new Date(dataNascitaStr); let eta = oggi.getFullYear() - nascita.getFullYear(); const m = oggi.getMonth() - nascita.getMonth(); if (m < 0 || (m === 0 && oggi.getDate() < nascita.getDate())) { eta--; } return eta; }
     function getPercentualiDiritto(eta) { if (eta < 0) return { us: 0, np: 1 }; if (eta <= 20) return { us: 0.95, np: 0.05 }; if (eta <= 30) return { us: 0.90, np: 0.10 }; if (eta <= 40) return { us: 0.85, np: 0.15 }; if (eta <= 45) return { us: 0.80, np: 0.20 }; if (eta <= 50) return { us: 0.75, np: 0.25 }; if (eta <= 53) return { us: 0.70, np: 0.30 }; if (eta <= 56) return { us: 0.65, np: 0.35 }; if (eta <= 60) return { us: 0.60, np: 0.40 }; if (eta <= 63) return { us: 0.55, np: 0.45 }; if (eta <= 66) return { us: 0.50, np: 0.50 }; if (eta <= 69) return { us: 0.45, np: 0.55 }; if (eta <= 72) return { us: 0.40, np: 0.60 }; if (eta <= 75) return { us: 0.35, np: 0.65 }; if (eta <= 78) return { us: 0.30, np: 0.70 }; if (eta <= 82) return { us: 0.25, np: 0.75 }; if (eta <= 86) return { us: 0.20, np: 0.80 }; if (eta <= 92) return { us: 0.15, np: 0.85 }; return { us: 0.10, np: 0.90 }; }
 
-    window.onload = function() { document.getElementById('nomePratica').value = ''; document.getElementById('checkMutuo').checked = false; document.getElementById('boxMutuo').style.display = 'none'; };
+    window.onload = function() {
+        const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
+        if (impiegatoSalvato) { document.getElementById('nomeImpiegato').value = impiegatoSalvato; }
+        document.getElementById('nomePratica').value = '';
+        document.getElementById('checkMutuo').checked = false;
+        document.getElementById('boxMutuo').style.display = 'none';
+        
+        // RECUPERO BOZZA DA INDEX.HTML
+        controllaBozzaSospesa();
+    };
+
     function vaiAlloStep(numeroStep) { const steps = document.querySelectorAll('.wizard-step'); for (let i = 0; i < steps.length; i++) { steps[i].style.display = 'none'; } document.getElementById('step' + numeroStep).style.display = 'block'; if (numeroStep === 3) { document.getElementById('headerPrincipale').style.display = 'none'; } else { document.getElementById('headerPrincipale').style.display = 'block'; } }
     function attivaMutuo(checkbox) { document.getElementById('boxMutuo').style.display = checkbox.checked ? 'block' : 'none'; }
     function calcolaDoppioIpoteca(inputMutuo) { let valStr = inputMutuo.value.replace(/\./g, "").replace(",", "."); let val = parseFloat(valStr) || 0; let valIpoteca = val * 2; document.getElementById('importoIpoteca').value = valIpoteca > 0 ? formatNumberStr(valIpoteca) : ""; }
@@ -375,7 +391,11 @@
 
                 ${speseExtraHTMLCV}
                 <tr>
-                    <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Vendita al: <select id="pctAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="100%" ${defaultPctCV==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctCV==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctCV==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctCV==='25%'?'selected':''}>25%</option></select><select id="tipoAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select></td>
+                    <td style="padding: 5px 0; padding-left: 10px; color: #555;">
+                        - Tassa Archivio Vendita al: 
+                        <select id="pctAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="100%" ${defaultPctCV==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctCV==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctCV==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctCV==='25%'?'selected':''}>25%</option></select>
+                        <select id="tipoAttoCV" onchange="aggiornaTassaArchivioCV()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #e8f4f8;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select>
+                    </td>
                     <td style="text-align: right;"><div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;"><span style="font-weight: bold; color: #555;">€</span><input type="text" id="tassaArchivioInput_cv" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(valArchivioCV)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div><div id="print_tassaArchivioInput_cv" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(valArchivioCV)}</div></td>
                 </tr>
                 <tr style="border-top: 2px solid #333; background: #fdfdfd;"><td style="padding: 10px 0; font-weight: bold; font-size: 1.05rem;">TOTALE TASSE E SPESE VENDITA:</td><td id="totaleTasseSpeseLBL_cv" style="text-align: right; font-weight: bold; font-size: 1.05rem; color: #2c3e50;">€ 0,00</td></tr>
@@ -398,10 +418,7 @@
                 </h2>
                 <div id="riepilogoContabile" style="font-size: 0.65rem; color: #bdc3c7; margin-top: 10px; border-top: 1px dotted #7f8c8d; padding-top: 5px; display: none;">
                     <strong>RIEPILOGO CONTABILE PER FATTURAZIONE:</strong> 
-                    Imponibile Netto: <span id="cont_netto">€ 0,00</span> | 
-                    Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | 
-                    IVA (22%): <span id="cont_iva">€ 0,00</span> | 
-                    Anticipazioni Esenti (Art. 15): <span id="cont_esenti">€ 0,00</span>
+                    Imponibile Netto: <span id="cont_netto">€ 0,00</span> | Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | IVA (22%): <span id="cont_iva">€ 0,00</span> | Anticipazioni Esenti: <span id="cont_esenti">€ 0,00</span>
                 </div>
             </div>
         `;
@@ -411,19 +428,11 @@
     function aggiornaTotaliDinamici() {
         const syncPrint = (id) => {
             const el = document.getElementById(id); const printEl = document.getElementById('print_' + id);
-            if (el && printEl) {
-                const val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0;
-                if(val > 0) { printEl.innerText = "€ " + formatNumberStr(val); } else { printEl.innerText = "€ 0,00"; }
-                return val;
-            } return 0;
+            if (el && printEl) { const val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; if(val > 0) { printEl.innerText = "€ " + formatNumberStr(val); } else { printEl.innerText = "€ 0,00"; } return val; } return 0;
         };
 
         let b_cv = syncPrint('inputBollo_cv'); let tr_cv = syncPrint('inputTrascrizione_cv'); let arch_cv = syncPrint('tassaArchivioInput_cv'); let onor_cv = syncPrint('onorarioLibero_cv');
-        let speseExtraCV = 0;
-        document.querySelectorAll('.input-spesa-extra-cv').forEach(el => {
-            let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraCV += val;
-            const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val);
-        });
+        let speseExtraCV = 0; document.querySelectorAll('.input-spesa-extra-cv').forEach(el => { let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraCV += val; const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val); });
 
         let totTasseCV = window.tasseFisseBaseCV + b_cv + tr_cv + speseExtraCV + arch_cv;
         document.getElementById('totaleTasseSpeseLBL_cv').innerText = formatEuro(totTasseCV);
@@ -431,50 +440,118 @@
         let totTasseM = 0; let onor_m = 0;
         if (document.getElementById('tassaArchivioInput_m')) {
             let arch_m = syncPrint('tassaArchivioInput_m'); onor_m = syncPrint('onorarioLibero_m');
-            let speseExtraM = 0;
-            document.querySelectorAll('.input-spesa-extra-m').forEach(el => {
-                let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraM += val;
-                const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val);
-            });
+            let speseExtraM = 0; document.querySelectorAll('.input-spesa-extra-m').forEach(el => { let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraM += val; const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val); });
             totTasseM = window.tasseFisseBaseMutuo + speseExtraM + arch_m;
             document.getElementById('totaleTasseSpeseMutuoLBL').innerText = formatEuro(totTasseM);
         }
 
-        const granTotale = totTasseCV + onor_cv + totTasseM + onor_m;
-        const onorariTotali = onor_cv + onor_m;
+        const granTotale = totTasseCV + onor_cv + totTasseM + onor_m; const onorariTotali = onor_cv + onor_m;
         document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
 
-        // CALCOLO INGEGNERIA INVERSA PER FATTURA
         if (onorariTotali > 0) {
-            const imponibileNetto = onorariTotali / 1.2688;
-            const cassaNaz = imponibileNetto * 0.04;
-            const iva = (imponibileNetto + cassaNaz) * 0.22;
-            const totaleEsenti = totTasseCV + totTasseM;
-            
-            document.getElementById('riepilogoContabile').style.display = 'block';
-            document.getElementById('cont_netto').innerText = formatEuro(imponibileNetto);
-            document.getElementById('cont_cassa').innerText = formatEuro(cassaNaz);
-            document.getElementById('cont_iva').innerText = formatEuro(iva);
-            document.getElementById('cont_esenti').innerText = formatEuro(totaleEsenti);
+            const imponibileNetto = onorariTotali / 1.2688; const cassaNaz = imponibileNetto * 0.04; const iva = (imponibileNetto + cassaNaz) * 0.22; const totaleEsenti = totTasseCV + totTasseM;
+            document.getElementById('riepilogoContabile').style.display = 'block'; document.getElementById('cont_netto').innerText = formatEuro(imponibileNetto); document.getElementById('cont_cassa').innerText = formatEuro(cassaNaz); document.getElementById('cont_iva').innerText = formatEuro(iva); document.getElementById('cont_esenti').innerText = formatEuro(totaleEsenti);
             document.body.classList.remove('onorario-vuoto');
-        } else {
-            document.getElementById('riepilogoContabile').style.display = 'none';
-            document.body.classList.add('onorario-vuoto');
+        } else { document.getElementById('riepilogoContabile').style.display = 'none'; document.body.classList.add('onorario-vuoto'); }
+    }
+
+    // --- NUOVA FUNZIONE ESPORTA BOZZA ---
+    function esportaBozza() {
+        let bozza = {
+            tipoSoftware: 'StudioNotarileBozza', tipoAtto: 'cv',
+            datiGenerali: {
+                nomePratica: document.getElementById('nomePratica').value, tipoAcquirente: document.getElementById('tipoAcquirente').value,
+                regimeFiscale: document.getElementById('regimeFiscale').value, condizioneSospensiva: document.getElementById('condizioneSospensiva').checked,
+                importoCredito: document.getElementById('importoCredito').value, quotaCredito: document.getElementById('quotaCredito').value,
+                importoPreliminare: document.getElementById('importoPreliminare').value, checkMutuo: document.getElementById('checkMutuo').checked,
+                tipoMutuo: document.getElementById('tipoMutuo').value, importoMutuo: document.getElementById('importoMutuo').value, importoIpoteca: document.getElementById('importoIpoteca').value
+            },
+            fabbricati: [], terreni: [], speseCV: [], speseM: []
+        };
+
+        document.querySelectorAll('.blocco-immobile').forEach(b => {
+            bozza.fabbricati.push({
+                cat: b.querySelector('.cat-catastale').value, diritto: b.querySelector('.tipo-diritto').value,
+                dataNascita: b.querySelector('.data-nascita-usufruttuario').value, quotaTot: b.querySelector('.quota-totale').value,
+                tipoAgev: b.querySelector('.tipo-agevolazione').value, quotaAgev: b.querySelector('.quota-agevolata').value,
+                rendita: b.querySelector('.rendita-catastale').value, prezzo: b.querySelector('.prezzo-dichiarato').value
+            });
+        });
+
+        document.querySelectorAll('.blocco-terreno').forEach(b => {
+            bozza.terreni.push({
+                tipo: b.querySelector('.tipo-terreno').value, diritto: b.querySelector('.tipo-diritto').value,
+                dataNascita: b.querySelector('.data-nascita-usufruttuario').value, quotaTot: b.querySelector('.quota-totale-terreno').value, prezzo: b.querySelector('.prezzo-terreno').value
+            });
+        });
+
+        document.querySelectorAll('.riga-spesa').forEach(b => { bozza.speseCV.push({ nome: b.querySelector('.nome-spesa').value, importo: b.querySelector('.importo-spesa').value }); });
+        document.querySelectorAll('.riga-spesa-mutuo').forEach(b => { bozza.speseM.push({ nome: b.querySelector('.nome-spesa-m').value, importo: b.querySelector('.importo-spesa-m').value }); });
+
+        let dataStr = JSON.stringify(bozza, null, 2); let blob = new Blob([dataStr], { type: "application/json" }); let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url;
+        let safeName = (document.getElementById('nomePratica').value || "Bozza_Vendita").replace(/[^a-zA-Z0-9]/g, '_');
+        a.download = safeName + ".bozza"; a.click();
+    }
+
+    // --- NUOVA FUNZIONE CARICA BOZZA ---
+    function controllaBozzaSospesa() {
+        let datiStr = localStorage.getItem('praticaInSospeso');
+        if (datiStr) {
+            try {
+                let bozza = JSON.parse(datiStr);
+                if (bozza.tipoAtto === 'cv') {
+                    if(bozza.datiGenerali.nomePratica) document.getElementById('nomePratica').value = bozza.datiGenerali.nomePratica;
+                    if(bozza.datiGenerali.tipoAcquirente) document.getElementById('tipoAcquirente').value = bozza.datiGenerali.tipoAcquirente;
+                    if(bozza.datiGenerali.regimeFiscale) document.getElementById('regimeFiscale').value = bozza.datiGenerali.regimeFiscale;
+                    if(bozza.datiGenerali.condizioneSospensiva) document.getElementById('condizioneSospensiva').checked = bozza.datiGenerali.condizioneSospensiva;
+                    if(bozza.datiGenerali.importoCredito) document.getElementById('importoCredito').value = bozza.datiGenerali.importoCredito;
+                    if(bozza.datiGenerali.quotaCredito) document.getElementById('quotaCredito').value = bozza.datiGenerali.quotaCredito;
+                    if(bozza.datiGenerali.importoPreliminare) document.getElementById('importoPreliminare').value = bozza.datiGenerali.importoPreliminare;
+                    
+                    document.getElementById('checkMutuo').checked = bozza.datiGenerali.checkMutuo === true;
+                    attivaMutuo(document.getElementById('checkMutuo'));
+                    
+                    if(bozza.datiGenerali.tipoMutuo) document.getElementById('tipoMutuo').value = bozza.datiGenerali.tipoMutuo;
+                    if(bozza.datiGenerali.importoMutuo) document.getElementById('importoMutuo').value = bozza.datiGenerali.importoMutuo;
+                    if(bozza.datiGenerali.importoIpoteca) document.getElementById('importoIpoteca').value = bozza.datiGenerali.importoIpoteca;
+
+                    if (bozza.fabbricati) {
+                        bozza.fabbricati.forEach(f => {
+                            aggiungiImmobile(); let blocks = document.querySelectorAll('.blocco-immobile'); let b = blocks[blocks.length - 1];
+                            b.querySelector('.cat-catastale').value = f.cat || 'A2'; b.querySelector('.tipo-diritto').value = f.diritto || 'piena'; b.querySelector('.data-nascita-usufruttuario').value = f.dataNascita || ''; b.querySelector('.quota-totale').value = f.quotaTot || '100';
+                            if(f.tipoAgev) b.querySelector('.tipo-agevolazione').value = f.tipoAgev; b.querySelector('.quota-agevolata').value = f.quotaAgev || '100'; b.querySelector('.rendita-catastale').value = f.rendita || ''; b.querySelector('.prezzo-dichiarato').value = f.prezzo || '';
+                            bloccaNonAgevolabili(b.querySelector('.cat-catastale')); gestisciDiritto(b.querySelector('.tipo-diritto')); gestisciTipoAgevolazione(b.querySelector('.tipo-agevolazione'));
+                        });
+                    }
+
+                    if (bozza.terreni) {
+                        bozza.terreni.forEach(t => {
+                            aggiungiTerreno(); let blocks = document.querySelectorAll('.blocco-terreno'); let b = blocks[blocks.length - 1];
+                            b.querySelector('.tipo-terreno').value = t.tipo || 'agricolo_ord'; b.querySelector('.tipo-diritto').value = t.diritto || 'piena'; b.querySelector('.data-nascita-usufruttuario').value = t.dataNascita || ''; b.querySelector('.quota-totale-terreno').value = t.quotaTot || '100'; b.querySelector('.prezzo-terreno').value = t.prezzo || '';
+                            gestisciDiritto(b.querySelector('.tipo-diritto'));
+                        });
+                    }
+
+                    document.getElementById('contenitoreSpeseExtra').innerHTML = '';
+                    if (bozza.speseCV) { bozza.speseCV.forEach(s => { aggiungiSpesaExtra(); let blocks = document.querySelectorAll('.riga-spesa'); let b = blocks[blocks.length - 1]; b.querySelector('.nome-spesa').value = s.nome; b.querySelector('.importo-spesa').value = s.importo; }); }
+                    if (bozza.speseM && bozza.datiGenerali.checkMutuo) { bozza.speseM.forEach(s => { aggiungiSpesaExtraMutuo(); let blocks = document.querySelectorAll('.riga-spesa-mutuo'); let b = blocks[blocks.length - 1]; b.querySelector('.nome-spesa-m').value = s.nome; b.querySelector('.importo-spesa-m').value = s.importo; }); }
+
+                    aggiornaStatoAcquirente(); vaiAlloStep(2);
+                }
+            } catch (e) { console.error("Errore caricamento bozza", e); }
+            localStorage.removeItem('praticaInSospeso');
         }
     }
 
     function salvaTesto() {
         let testo = "PREVENTIVO COMPRAVENDITA E MUTUO\n======================================\n";
-        testo += "Pratica: " + (document.getElementById('nomePratica').value || "Non specificata") + "\n";
-        testo += "Data: " + new Date().toLocaleDateString('it-IT') + "\n";
-        testo += "Operatore: " + (document.getElementById('nomeImpiegato').value || "Non specificato") + "\n\n";
+        testo += "Pratica: " + (document.getElementById('nomePratica').value || "Non specificata") + "\n"; testo += "Data: " + new Date().toLocaleDateString('it-IT') + "\n"; testo += "Operatore: " + (document.getElementById('nomeImpiegato').value || "Non specificato") + "\n\n";
         
         let righe = document.querySelectorAll('#risultatoPreventivo table tr');
         righe.forEach(r => {
             let celle = r.querySelectorAll('th, td');
             if(celle.length === 2) {
-                let voce = celle[0].innerText.replace(/\n/g, ' ').replace(/- /g, '').trim();
-                let importo = ""; let input = celle[1].querySelector('input');
+                let voce = celle[0].innerText.replace(/\n/g, ' ').replace(/- /g, '').trim(); let importo = ""; let input = celle[1].querySelector('input');
                 if(input) { importo = "€ " + input.value; } else { importo = celle[1].innerText.replace(/\n/g, ' ').trim(); }
                 if(voce !== "Tasse ed Imposte" && voce !== "Importo") { testo += voce + ": \t" + importo + "\n"; }
             }
@@ -486,16 +563,10 @@
         
         if (document.getElementById('riepilogoContabile') && document.getElementById('riepilogoContabile').style.display === 'block') {
             testo += "\n--------------------------------------\nRIEPILOGO CONTABILE PER FATTURAZIONE:\n";
-            testo += "Imponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\n";
-            testo += "Cassa Notariato (4%): \t" + document.getElementById('cont_cassa').innerText + "\n";
-            testo += "IVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\n";
-            testo += "Anticipazioni Esenti (Art. 15): " + document.getElementById('cont_esenti').innerText + "\n";
+            testo += "Imponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\n"; testo += "Cassa Notariato (4%): \t" + document.getElementById('cont_cassa').innerText + "\n"; testo += "IVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\n"; testo += "Anticipazioni Esenti: \t" + document.getElementById('cont_esenti').innerText + "\n";
         }
         
-        let blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
-        let link = document.createElement("a"); link.href = URL.createObjectURL(blob);
-        link.download = "Preventivo_CV_" + (document.getElementById('nomePratica').value || "Preventivo").replace(/[^a-zA-Z0-9]/g, '_') + ".txt";
-        link.click();
+        let blob = new Blob([testo], { type: "text/plain;charset=utf-8" }); let link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "Preventivo_CV_" + (document.getElementById('nomePratica').value || "Preventivo").replace(/[^a-zA-Z0-9]/g, '_') + ".txt"; link.click();
     }
 </script>
 </body>
