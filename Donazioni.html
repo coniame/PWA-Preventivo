@@ -44,25 +44,24 @@
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
         
+        /* GESTIONE STAMPA */
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .app-container { box-shadow: none; border: none; padding: 0; }
             button, .btn-home { display: none !important; }
-            
-            /* Forza l'input a mantenere lo spazio in stampa per non far sparire il numero */
-            input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; width: auto !important; min-width: 80px; }
-            
             .box-guida, .tooltip, .avviso-rosso { display: none !important; } 
-            #tipoAttoCV, #tipoAttoMutuo { display: none !important; }
             
-            /* REGOLE CONDIZIONALI: Si attivano SOLO se l'onorario non viene inserito */
+            /* SCAMBIO LOGICO: Nasconde gli input editabili e mostra i testi allineati */
+            .hide-print { display: none !important; }
+            .mostra-print { display: block !important; }
+            
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
             .onorario-vuoto #dettaglioIva { color: #000 !important; }
-            .onorario-vuoto .input-onorario-stampa { display: none !important; }
-            .onorario-vuoto .linea-onorario-vuota { display: block !important; border-bottom: 1px solid #000; margin-top: 25px; width: 100%; height: 10px; }
-            .onorario-vuoto .valore-totale-stampa { display: none !important; }
-            .onorario-vuoto .linea-stampa-vuota { display: inline-block !important; }
+            
+            /* GESTIONE DELLA LINEA DELLA FIRMA SE ONORARIO È VUOTO */
+            .onorario-vuoto #print_onorarioLibero { display: none !important; }
+            .onorario-vuoto .linea-onorario-vuota { display: flex !important; align-items: flex-end; border-bottom: 1px solid #000; width: 100%; height: 20px; margin-top: 5px; }
         }
     </style>
 </head>
@@ -124,7 +123,8 @@
         
         <div class="flex-buttons">
             <button type="button" class="secondary" onclick="vaiAlloStep(2)">⬅ Modifica Dati</button>
-            <button type="button" onclick="window.print()">Stampa PDF</button>
+            <button type="button" class="secondary" onclick="salvaTesto()" style="background: #27ae60;">💾 Salva Dati (Testo)</button>
+            <button type="button" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
         </div>
     </section>
 </div>
@@ -177,7 +177,8 @@
     function formattaDecimale(inputElement) {
         let valStr = inputElement.value.replace(/\./g, "").replace(",", ".");
         let val = parseFloat(valStr) || 0;
-        if (val === 0 && inputElement.id !== "tassaArchivioInput") { 
+        // Non cancellare il campo se è a zero (tranne l'onorario) per permettere modifiche chiare
+        if (val === 0 && inputElement.id === "onorarioLibero") { 
             inputElement.value = ""; 
         } else { 
             inputElement.value = formatNumberStr(val); 
@@ -229,7 +230,6 @@
         else { document.getElementById('headerPrincipale').style.display = 'block'; }
     }
 
-    // MOTORE CALCOLO AUTOMATICO VALORE
     function calcolaValoreCatastale(elemento) {
         const blocco = elemento.closest('.item-donazione');
         if (!blocco) return;
@@ -434,7 +434,7 @@
 
         vaiAlloStep(3);
 
-        // SECCHI DEI DONANTI: raggruppiamo la massa per ogni singolo donante
+        // SECCHI DEI DONANTI
         let donantiData = {};
         let totaleMassaGlobaleAtto = 0;
         let hasImmobiliGlobale = false; 
@@ -495,7 +495,6 @@
             }
         });
 
-        // 1. Calcolo Imposta di Donazione
         let totaleImpostaDonazione = 0;
         let dettagliDonantiHTML = `<div style="margin-top: 15px; padding-top: 10px; border-top: 2px solid #eee; font-size: 0.85rem;">`;
         
@@ -503,7 +502,6 @@
             let imponibileNetto = Math.max(0, dati.massa - dati.franchigia);
             let imposta = imponibileNetto * dati.aliquota;
             totaleImpostaDonazione += imposta;
-            
             dettagliDonantiHTML += `
                 <div style="margin-bottom: 8px;">
                     <strong>Calcolo per Donante: ${nome}</strong> [${dati.etichetta}]<br>
@@ -514,30 +512,20 @@
         }
         dettagliDonantiHTML += `</div>`;
 
-        // 2. Imposta di Registro Assorbita (Fissa a 0)
         let impostaRegistro = 0;
-
-        // 3. Calcolo Imposte Ipotecaria e Catastale 
         let impostaIpotecaria = 0;
         let impostaCatastale = 0;
 
-        if (hasImmobiliPrimaCasaGlobale) {
-            impostaIpotecaria += 200;
-            impostaCatastale += 200;
-        }
+        if (hasImmobiliPrimaCasaGlobale) { impostaIpotecaria += 200; impostaCatastale += 200; }
         if (imponibileImmobiliOrdinariGlobale > 0) {
             impostaIpotecaria += Math.max(200, imponibileImmobiliOrdinariGlobale * 0.02);
             impostaCatastale += Math.max(200, imponibileImmobiliOrdinariGlobale * 0.01);
         }
 
-        // 4. Calcolo Tasse Fisse sull'Atto Unico (Da rendere modificabili)
         let impostaBollo = hasImmobiliGlobale ? 230 : 155; 
         let tassaTrascrizioneVoltura = hasImmobiliGlobale ? 90 : 0;
-
-        // Base Tasse Statiche (quelle calcolate matematicamente che l'utente non deve poter toccare)
         const tasseFisseBaseStatiche = totaleImpostaDonazione + impostaRegistro + impostaIpotecaria + impostaCatastale;
 
-        // 5. Spese Vive Extra (Da rendere modificabili in Fase 3)
         let speseExtraHTML = ``;
         const righeSpese = document.querySelectorAll('.riga-spesa');
         let ciSonoSpeseExtra = false;
@@ -551,17 +539,17 @@
                 <tr>
                     <td style="padding: 4px 0; padding-left: 10px; font-size: 0.9rem; color: #555;">- ${nomeSpesa}</td>
                     <td style="text-align: right;">
-                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
+                        <div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
                             <span style="font-weight: bold; color: #555;">€</span>
-                            <input type="text" class="input-valuta input-spesa-extra-riepilogo" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(importoSpesa)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
+                            <input type="text" id="extra_${i}" class="input-valuta input-spesa-extra-riepilogo" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(importoSpesa)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
                         </div>
+                        <div id="print_extra_${i}" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(importoSpesa)}</div>
                     </td>
                 </tr>`; 
             }
         }
         if (ciSonoSpeseExtra) { speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Spese Vive Esenti</td></tr>` + speseExtraHTML; }
 
-        // 6. Contributi (Tassa Archivio SOLO PUB)
         const scaglione = PUB.find(x => totaleMassaGlobaleAtto <= x.max) || PUB[PUB.length - 1];
         const onorarioRepertorioPUB = scaglione.h["100%"] || 0;
         const cassaNazPUB = Math.round(onorarioRepertorioPUB * scaglione.c * 100) / 100;
@@ -599,10 +587,11 @@
                 <tr>
                     <td style="padding: 5px 0;">Imposta di Bollo (Atto Unico)</td>
                     <td style="text-align: right;">
-                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
+                        <div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
                             <span style="font-weight: bold; color: #555;">€</span>
                             <input type="text" id="inputBollo" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(impostaBollo)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
                         </div>
+                        <div id="print_inputBollo" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(impostaBollo)}</div>
                     </td>
                 </tr>
                 
@@ -610,10 +599,11 @@
                 <tr>
                     <td style="padding: 5px 0;">Tassa Ipotecaria fissa (Trascrizione e Voltura)</td>
                     <td style="text-align: right;">
-                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
+                        <div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
                             <span style="font-weight: bold; color: #555;">€</span>
                             <input type="text" id="inputTrascrizione" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(tassaTrascrizioneVoltura)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
                         </div>
+                        <div id="print_inputTrascrizione" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(tassaTrascrizioneVoltura)}</div>
                     </td>
                 </tr>
                 ` : ''}
@@ -623,10 +613,11 @@
                 <tr>
                     <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Notarile (Atto Pubblico)</td>
                     <td style="text-align: right;">
-                        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
+                        <div class="hide-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
                             <span style="font-weight: bold; color: #555;">€</span>
                             <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(totContributiPUB)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
                         </div>
+                        <div id="print_tassaArchivioInput" class="mostra-print" style="display:none; text-align: right; font-weight: bold; color: #555;">€ ${formatNumberStr(totContributiPUB)}</div>
                     </td>
                 </tr>
                 <tr style="border-top: 2px solid #333; background: #fdfdfd;">
@@ -637,10 +628,16 @@
 
             <div style="background: #f4ecf7; padding: 15px; border-radius: 8px; border: 1px solid #8e44ad;">
                 <label style="color: #8e44ad;">Onorario Notarile DONAZIONE (IVA inclusa) (€):</label>
-                <div style="position: relative; display: flex; align-items: center; gap: 10px;">
+                
+                <div class="hide-print" style="position: relative; display: flex; align-items: center; gap: 10px; margin-top: 5px;">
                     <span style="font-size: 1.2rem; font-weight: bold; color: #8e44ad;">€</span>
-                    <input type="text" id="onorarioLibero" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="flex: 1; font-size: 1.2rem; font-weight: bold; color: #2c3e50; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
-                    <div class="linea-onorario-vuota"></div>
+                    <input type="text" id="onorarioLibero" class="input-valuta" placeholder="es. 1.500,00" style="flex: 1; font-size: 1.2rem; font-weight: bold; color: #2c3e50; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${tasseFisseBaseStatiche})">
+                </div>
+                
+                <div id="print_onorarioLibero" class="mostra-print" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #8e44ad; margin-top: 5px;">€ 0,00</div>
+                
+                <div class="linea-onorario-vuota" style="display: none;">
+                    <span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span>
                 </div>
             </div>
             
@@ -657,27 +654,35 @@
         aggiornaTotaliDinamici(tasseFisseBaseStatiche);
     }
 
-    // MOTORE CALCOLO TOTALE "A CALDO" (Legge i valori dai campi input modificati dall'utente)
+    // MOTORE CALCOLO TOTALE E GESTIONE STAMPA 
     function aggiornaTotaliDinamici(tasseFisseBaseStatiche) {
         
-        const parseValore = (id) => {
+        // Funzione per sincronizzare l'input a schermo con il testo nascosto per la stampa
+        const syncPrint = (id) => {
             const el = document.getElementById(id);
-            return el && el.value ? parseFloat(el.value.replace(/\./g, "").replace(",", ".")) : 0;
+            const printEl = document.getElementById('print_' + id);
+            if (el && printEl) {
+                const val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0;
+                if(val > 0) { printEl.innerText = "€ " + formatNumberStr(val); } 
+                else { printEl.innerText = "€ 0,00"; }
+                return val;
+            }
+            return 0;
         };
 
-        // Lettura delle tasse modificabili dall'utente
-        let bollo = parseValore('inputBollo');
-        let trascrizione = parseValore('inputTrascrizione');
-        let tArchivio = parseValore('tassaArchivioInput');
-        let onorario = parseValore('onorarioLibero');
+        let bollo = syncPrint('inputBollo');
+        let trascrizione = syncPrint('inputTrascrizione');
+        let tArchivio = syncPrint('tassaArchivioInput');
+        let onorario = syncPrint('onorarioLibero');
 
-        // Lettura e somma delle spese vive extra modificate (es. Visure)
         let speseExtraDinamiche = 0;
         document.querySelectorAll('.input-spesa-extra-riepilogo').forEach(el => {
-            speseExtraDinamiche += el.value ? parseFloat(el.value.replace(/\./g, "").replace(",", ".")) : 0;
+            let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0;
+            speseExtraDinamiche += val;
+            const printEl = document.getElementById('print_' + el.id);
+            if(printEl) printEl.innerText = "€ " + formatNumberStr(val);
         });
 
-        // Ricalcolo
         let totTasse = tasseFisseBaseStatiche + bollo + trascrizione + speseExtraDinamiche + tArchivio;
         document.getElementById('totaleTasseSpeseLBL').innerText = formatEuro(totTasse);
 
@@ -687,8 +692,46 @@
         document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
         document.getElementById('dettaglioIva').innerText = "di cui IVA 22% scorporata dall'onorario: " + formatEuro(ivaScorporata);
 
+        // Gestisce la linea vuota in base alla presenza dell'onorario
         if (onorario === 0) { document.body.classList.add('onorario-vuoto'); } 
         else { document.body.classList.remove('onorario-vuoto'); }
+    }
+
+    // FUNZIONE DI SALVATAGGIO TESTO 
+    function salvaTesto() {
+        let testo = "PREVENTIVO DONAZIONI - STUDIO NOTARILE\n";
+        testo += "======================================\n";
+        testo += "Pratica: " + (document.getElementById('nomePratica').value || "Non specificata") + "\n";
+        testo += "Data: " + new Date().toLocaleDateString('it-IT') + "\n";
+        testo += "Operatore: " + (document.getElementById('nomeImpiegato').value || "Non specificato") + "\n\n";
+        
+        let righe = document.querySelectorAll('#risultatoPreventivo table tr');
+        righe.forEach(r => {
+            let celle = r.querySelectorAll('th, td');
+            if(celle.length === 2) {
+                let voce = celle[0].innerText.replace(/\n/g, ' ').replace(/- /g, '').trim();
+                let importo = "";
+                let input = celle[1].querySelector('input');
+                if(input) { importo = "€ " + input.value; } 
+                else { importo = celle[1].innerText.replace(/\n/g, ' ').trim(); }
+                
+                if(voce !== "Tasse ed Imposte" && voce !== "Importo") {
+                    testo += voce + ": \t" + importo + "\n";
+                }
+            }
+        });
+        
+        let onorarioInput = document.getElementById('onorarioLibero');
+        let onorario = onorarioInput && onorarioInput.value ? onorarioInput.value : "0,00";
+        testo += "\nOnorario Notarile (IVA inc.): \t€ " + onorario + "\n";
+        testo += "GRAN TOTALE: \t" + document.getElementById('valoreTotaleStampa').innerText + "\n";
+        
+        let blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
+        let link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        let safeName = (document.getElementById('nomePratica').value || "Preventivo").replace(/[^a-zA-Z0-9]/g, '_');
+        link.download = "Preventivo_" + safeName + ".txt";
+        link.click();
     }
 </script>
 
