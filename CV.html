@@ -120,7 +120,11 @@
 
     <section id="step3" class="wizard-step">
         <div id="risultatoPreventivo"></div>
-        <div class="flex-buttons"><button type="button" class="secondary" onclick="vaiAlloStep(2)">⬅ Modifica Dati</button><button type="button" class="secondary" onclick="salvaTesto()" style="background: #27ae60;">💾 Salva Dati (Testo)</button><button type="button" onclick="window.print()">🖨️ Stampa / Salva PDF</button></div>
+        <div class="flex-buttons">
+            <button type="button" class="secondary" onclick="vaiAlloStep(2)">⬅ Modifica Dati</button>
+            <button type="button" class="secondary" onclick="salvaTesto()" style="background: #27ae60;">💾 Salva Dati (Testo)</button>
+            <button type="button" onclick="window.print()">🖨️ Stampa / Salva PDF</button>
+        </div>
     </section>
 </div>
 
@@ -144,8 +148,6 @@
         document.getElementById('nomePratica').value = '';
         document.getElementById('checkMutuo').checked = false;
         document.getElementById('boxMutuo').style.display = 'none';
-        
-        // RECUPERO BOZZA DA INDEX.HTML
         controllaBozzaSospesa();
     };
 
@@ -350,6 +352,10 @@
                     <div class="hide-print" style="position: relative; display: flex; align-items: center; gap: 10px; margin-top: 5px;"><span style="font-size: 1.2rem; font-weight: bold; color: #8e44ad;">€</span><input type="text" id="onorarioLibero_m" class="input-valuta input-onorario-stampa" placeholder="es. 1.000,00" style="flex: 1; font-size: 1.2rem; font-weight: bold; color: #8e44ad; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div>
                     <div id="print_onorarioLibero_m" class="mostra-print print_onorarioLibero_m" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #8e44ad; margin-top: 5px;">€ 0,00</div><div class="linea-onorario-vuota" style="display: none;"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span></div>
                 </div>
+                
+                <div style="text-align: right; margin-top: 15px; font-size: 1.3rem; color: #8e44ad; font-weight: bold; border-top: 2px dashed #c39bd3; padding-top: 10px;">
+                    TOTALE MUTUO: <span id="totaleMutuoLBL">€ 0,00</span>
+                </div>
             </div>`;
         }
 
@@ -406,20 +412,28 @@
                 <div class="hide-print" style="position: relative; display: flex; align-items: center; gap: 10px; margin-top: 5px;"><span style="font-size: 1.2rem; font-weight: bold; color: #2980b9;">€</span><input type="text" id="onorarioLibero_cv" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="flex: 1; font-size: 1.2rem; font-weight: bold; color: #2c3e50; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div>
                 <div id="print_onorarioLibero_cv" class="mostra-print print_onorarioLibero_cv" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #2980b9; margin-top: 5px;">€ 0,00</div><div class="linea-onorario-vuota" style="display: none;"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span></div>
             </div>
+            
+            <div style="text-align: right; margin-top: 15px; font-size: 1.3rem; color: #2c3e50; font-weight: bold; border-top: 2px dashed #bdc3c7; padding-top: 10px;">
+                TOTALE VENDITA: <span id="totaleVenditaLBL">€ 0,00</span>
+            </div>
 
             ${noteSpecialiHTML}
             ${htmlMutuo}
 
-            <div id="totaleFinaleBox" style="text-align: right; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-top: 25px;">
+            <div id="totaleFinaleBox" style="text-align: right; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-top: 25px; display: ${isMutuoAttivo ? 'block' : 'none'};">
                 <h2 style="margin: 0; display: flex; justify-content: flex-end; align-items: baseline; font-size: 1.4rem;">
-                    <span>GRAN TOTALE COMPLESSIVO: </span>
+                    <span>TOTALE COMPLESSIVO: </span>
                     <span id="valoreTotaleStampa" class="valore-totale-stampa" style="margin-left: 10px;">€ 0,00</span>
                     <span class="linea-stampa-vuota"></span>
                 </h2>
-                <div id="riepilogoContabile" style="font-size: 0.65rem; color: #bdc3c7; margin-top: 10px; border-top: 1px dotted #7f8c8d; padding-top: 5px; display: none;">
-                    <strong>RIEPILOGO CONTABILE PER FATTURAZIONE:</strong> 
-                    Imponibile Netto: <span id="cont_netto">€ 0,00</span> | Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | IVA (22%): <span id="cont_iva">€ 0,00</span> | Anticipazioni Esenti: <span id="cont_esenti">€ 0,00</span>
-                </div>
+            </div>
+            
+            <div id="riepilogoContabile" style="font-size: 0.65rem; color: #7f8c8d; margin-top: 15px; border-top: 1px dotted #bdc3c7; padding-top: 5px; text-align: left; display: none;">
+                <strong>RIEPILOGO CONTABILE PER FATTURAZIONE:</strong> 
+                Imponibile Netto: <span id="cont_netto">€ 0,00</span> | 
+                Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | 
+                IVA (22%): <span id="cont_iva">€ 0,00</span> | 
+                Anticipazioni Esenti (Art. 15): <span id="cont_esenti">€ 0,00</span>
             </div>
         `;
         aggiornaTotaliDinamici();
@@ -428,31 +442,61 @@
     function aggiornaTotaliDinamici() {
         const syncPrint = (id) => {
             const el = document.getElementById(id); const printEl = document.getElementById('print_' + id);
-            if (el && printEl) { const val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; if(val > 0) { printEl.innerText = "€ " + formatNumberStr(val); } else { printEl.innerText = "€ 0,00"; } return val; } return 0;
+            if (el && printEl) {
+                const val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0;
+                if(val > 0) { printEl.innerText = "€ " + formatNumberStr(val); } else { printEl.innerText = "€ 0,00"; }
+                return val;
+            } return 0;
         };
 
         let b_cv = syncPrint('inputBollo_cv'); let tr_cv = syncPrint('inputTrascrizione_cv'); let arch_cv = syncPrint('tassaArchivioInput_cv'); let onor_cv = syncPrint('onorarioLibero_cv');
-        let speseExtraCV = 0; document.querySelectorAll('.input-spesa-extra-cv').forEach(el => { let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraCV += val; const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val); });
+        let speseExtraCV = 0;
+        document.querySelectorAll('.input-spesa-extra-cv').forEach(el => {
+            let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraCV += val;
+            const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val);
+        });
 
         let totTasseCV = window.tasseFisseBaseCV + b_cv + tr_cv + speseExtraCV + arch_cv;
         document.getElementById('totaleTasseSpeseLBL_cv').innerText = formatEuro(totTasseCV);
+        
+        let subTotVendita = totTasseCV + onor_cv;
+        if(document.getElementById('totaleVenditaLBL')) document.getElementById('totaleVenditaLBL').innerText = formatEuro(subTotVendita);
 
-        let totTasseM = 0; let onor_m = 0;
+        let totTasseM = 0; let onor_m = 0; let subTotMutuo = 0;
         if (document.getElementById('tassaArchivioInput_m')) {
             let arch_m = syncPrint('tassaArchivioInput_m'); onor_m = syncPrint('onorarioLibero_m');
-            let speseExtraM = 0; document.querySelectorAll('.input-spesa-extra-m').forEach(el => { let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraM += val; const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val); });
+            let speseExtraM = 0;
+            document.querySelectorAll('.input-spesa-extra-m').forEach(el => {
+                let val = parseFloat(el.value.replace(/\./g, "").replace(",", ".")) || 0; speseExtraM += val;
+                const printEl = document.getElementById('print_' + el.id); if(printEl) printEl.innerText = "€ " + formatNumberStr(val);
+            });
             totTasseM = window.tasseFisseBaseMutuo + speseExtraM + arch_m;
             document.getElementById('totaleTasseSpeseMutuoLBL').innerText = formatEuro(totTasseM);
+            subTotMutuo = totTasseM + onor_m;
+            if(document.getElementById('totaleMutuoLBL')) document.getElementById('totaleMutuoLBL').innerText = formatEuro(subTotMutuo);
         }
 
-        const granTotale = totTasseCV + onor_cv + totTasseM + onor_m; const onorariTotali = onor_cv + onor_m;
-        document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
+        const granTotale = subTotVendita + subTotMutuo;
+        const onorariTotali = onor_cv + onor_m;
+        
+        if(document.getElementById('valoreTotaleStampa')) document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
 
         if (onorariTotali > 0) {
-            const imponibileNetto = onorariTotali / 1.2688; const cassaNaz = imponibileNetto * 0.04; const iva = (imponibileNetto + cassaNaz) * 0.22; const totaleEsenti = totTasseCV + totTasseM;
-            document.getElementById('riepilogoContabile').style.display = 'block'; document.getElementById('cont_netto').innerText = formatEuro(imponibileNetto); document.getElementById('cont_cassa').innerText = formatEuro(cassaNaz); document.getElementById('cont_iva').innerText = formatEuro(iva); document.getElementById('cont_esenti').innerText = formatEuro(totaleEsenti);
+            const imponibileNetto = onorariTotali / 1.2688;
+            const cassaNaz = imponibileNetto * 0.04;
+            const iva = (imponibileNetto + cassaNaz) * 0.22;
+            const totaleEsenti = totTasseCV + totTasseM;
+            
+            document.getElementById('riepilogoContabile').style.display = 'block';
+            document.getElementById('cont_netto').innerText = formatEuro(imponibileNetto);
+            document.getElementById('cont_cassa').innerText = formatEuro(cassaNaz);
+            document.getElementById('cont_iva').innerText = formatEuro(iva);
+            document.getElementById('cont_esenti').innerText = formatEuro(totaleEsenti);
             document.body.classList.remove('onorario-vuoto');
-        } else { document.getElementById('riepilogoContabile').style.display = 'none'; document.body.classList.add('onorario-vuoto'); }
+        } else {
+            document.getElementById('riepilogoContabile').style.display = 'none';
+            document.body.classList.add('onorario-vuoto');
+        }
     }
 
     // --- NUOVA FUNZIONE ESPORTA BOZZA ---
@@ -558,8 +602,17 @@
         });
         
         let onCV = document.getElementById('onorarioLibero_cv'); testo += "\nOnorario Compravendita: \t€ " + (onCV && onCV.value ? onCV.value : "0,00") + "\n";
-        let onM = document.getElementById('onorarioLibero_m'); if (onM) { testo += "Onorario Mutuo: \t€ " + (onM.value ? onM.value : "0,00") + "\n"; }
-        testo += "GRAN TOTALE: \t" + document.getElementById('valoreTotaleStampa').innerText + "\n";
+        testo += "TOTALE VENDITA: \t" + (document.getElementById('totaleVenditaLBL') ? document.getElementById('totaleVenditaLBL').innerText : "€ 0,00") + "\n\n";
+
+        let onM = document.getElementById('onorarioLibero_m'); 
+        if (onM) { 
+            testo += "Onorario Mutuo: \t€ " + (onM.value ? onM.value : "0,00") + "\n"; 
+            testo += "TOTALE MUTUO: \t" + (document.getElementById('totaleMutuoLBL') ? document.getElementById('totaleMutuoLBL').innerText : "€ 0,00") + "\n\n";
+        }
+        
+        if(document.getElementById('valoreTotaleStampa') && document.getElementById('totaleFinaleBox').style.display !== 'none') {
+            testo += "GRAN TOTALE COMPLESSIVO: \t" + document.getElementById('valoreTotaleStampa').innerText + "\n";
+        }
         
         if (document.getElementById('riepilogoContabile') && document.getElementById('riepilogoContabile').style.display === 'block') {
             testo += "\n--------------------------------------\nRIEPILOGO CONTABILE PER FATTURAZIONE:\n";
