@@ -51,11 +51,15 @@
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .app-container { box-shadow: none; border: none; padding: 0; }
-            button { display: none !important; }
-            input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; }
-            .box-guida, .tooltip, .btn-home { display: none !important; } 
-            #tipoAttoCV, #tipoAttoMutuo { display: none !important; } 
+            button, .btn-home { display: none !important; }
             
+            /* Forza l'input a mantenere lo spazio in stampa per non far sparire il numero */
+            input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; width: auto !important; min-width: 80px; }
+            
+            .box-guida, .tooltip, .avviso-rosso { display: none !important; } 
+            #tipoAttoCV, #tipoAttoMutuo { display: none !important; }
+            
+            /* REGOLE CONDIZIONALI: Si attivano SOLO se l'onorario non viene inserito */
             .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
             .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
             .onorario-vuoto #dettaglioIva { color: #000 !important; }
@@ -495,7 +499,6 @@
         c.appendChild(r);
     }
 
-    // --- FUNZIONE PER LO SCAMBIO GRAFICO DEL TIPO DI ATTO ---
     function cambiaTipoAtto(selectElement, idInput, valPubblico, valPrivato, baseTasseCV, baseTasseMutuo) {
         const inputArchivio = document.getElementById(idInput);
         if (selectElement.value === 'privato') {
@@ -506,7 +509,6 @@
         aggiornaTotaliDinamici(baseTasseCV, baseTasseMutuo);
     }
 
-    // --- MOTORE MATEMATICO PRINCIPALE COMPRAVENDITA + MUTUO ---
     function avviaCalcoloPreventivo() {
         const isMutuoAttivo = document.getElementById('checkMutuo').checked;
         const regimeVenditore = document.getElementById('regimeFiscale').value;
