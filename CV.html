@@ -42,6 +42,9 @@
         #step1 { display: block; }
         .flex-buttons { display: flex; gap: 10px; }
 
+        /* LINEE VUOTE DA DISEGNARE IN FASE DI STAMPA */
+        .linea-totale-vendita-vuota, .linea-totale-mutuo-vuota, .linea-stampa-vuota { display: none; margin-left: 10px; width: 150px; border-bottom: 2px solid #000; }
+
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .app-container { box-shadow: none; border: none; padding: 0; }
@@ -51,11 +54,28 @@
             .hide-print { display: none !important; }
             .mostra-print { display: block !important; }
             
-            .onorario-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
-            .onorario-vuoto #totaleFinaleBox h2 { color: #000 !important; }
-            .onorario-vuoto #riepilogoContabile { display: none !important; }
-            .onorario-vuoto .print_onorarioLibero_cv, .onorario-vuoto .print_onorarioLibero_m { display: none !important; }
-            .onorario-vuoto .linea-onorario-vuota { display: flex !important; align-items: flex-end; border-bottom: 1px solid #000; width: 100%; height: 20px; margin-top: 5px; }
+            /* GESTIONE GRAFICA TOTALI VUOTI (Solo Stampa) */
+            .vendita-vuota #totaleVenditaLBL { display: none !important; }
+            .vendita-vuota .linea-totale-vendita-vuota { display: inline-block !important; }
+
+            .mutuo-vuoto #totaleMutuoLBL { display: none !important; }
+            .mutuo-vuoto .linea-totale-mutuo-vuota { display: inline-block !important; }
+
+            .totale-vuoto #valoreTotaleStampa { display: none !important; }
+            .totale-vuoto .linea-stampa-vuota { display: inline-block !important; }
+
+            /* Nasconde Riquadro Contabile e IVA se i dati non sono completi */
+            .totale-vuoto #totaleFinaleBox { background: #fff !important; color: #000 !important; border: 2px solid #000 !important; }
+            .totale-vuoto #totaleFinaleBox h2 { color: #000 !important; }
+            .totale-vuoto #dettaglioIva { display: none !important; }
+            .totale-vuoto #riepilogoContabile { display: none !important; }
+            
+            /* Nasconde le caselle degli onorari vuoti per lasciare la riga lunga a penna */
+            .vendita-vuota .print_onorarioLibero_cv { display: none !important; }
+            .vendita-vuota .linea-onorario-vuota-cv { display: flex !important; align-items: flex-end; border-bottom: 1px solid #000; width: 100%; height: 20px; margin-top: 5px; }
+
+            .mutuo-vuoto .print_onorarioLibero_m { display: none !important; }
+            .mutuo-vuoto .linea-onorario-vuota-m { display: flex !important; align-items: flex-end; border-bottom: 1px solid #000; width: 100%; height: 20px; margin-top: 5px; }
         }
     </style>
 </head>
@@ -109,6 +129,7 @@
             <label>Tipologia Mutuo:</label><select id="tipoMutuo" autocomplete="off"><option value="pc">Mutuo per acquisto Prima Casa (Imposta Sost. 0,25%)</option><option value="ord">Mutuo Ordinario / Seconda Casa (Imposta Sost. 2,00%)</option></select>
             <label>Importo Mutuato (Erogato) (€):</label><input type="text" id="importoMutuo" class="input-valuta" placeholder="es. 100.000,00" style="text-align: right;" autocomplete="off" oninput="formattaValuta(this); calcolaDoppioIpoteca(this)" onblur="formattaDecimale(this)">
             <label>Importo Ipoteca Iscritta (€):</label><input type="text" id="importoIpoteca" class="input-valuta" placeholder="es. 200.000,00" style="text-align: right; font-weight: bold; color: #8e44ad;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            
             <label style="margin-top: 15px;">Spese vive extra SOLO PER MUTUO (se previste):</label><div id="contenitoreSpeseExtraMutuo"></div><button type="button" class="secondary" onclick="aggiungiSpesaExtraMutuo()" style="padding: 8px; font-size: 0.9rem; background: #af7ac5; color: white;">+ Aggiungi spesa Mutuo</button>
         </div>
         <div class="flex-buttons">
@@ -350,11 +371,14 @@
                 </table>
                 <div style="background: #f4ecf7; padding: 15px; border-radius: 8px; border: 1px solid #c39bd3;"><label style="color: #8e44ad;">Onorario Notarile MUTUO (IVA inclusa) (€):</label>
                     <div class="hide-print" style="position: relative; display: flex; align-items: center; gap: 10px; margin-top: 5px;"><span style="font-size: 1.2rem; font-weight: bold; color: #8e44ad;">€</span><input type="text" id="onorarioLibero_m" class="input-valuta input-onorario-stampa" placeholder="es. 1.000,00" style="flex: 1; font-size: 1.2rem; font-weight: bold; color: #8e44ad; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div>
-                    <div id="print_onorarioLibero_m" class="mostra-print print_onorarioLibero_m" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #8e44ad; margin-top: 5px;">€ 0,00</div><div class="linea-onorario-vuota" style="display: none;"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span></div>
+                    <div id="print_onorarioLibero_m" class="mostra-print print_onorarioLibero_m" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #8e44ad; margin-top: 5px;">€ 0,00</div>
+                    <div class="linea-onorario-vuota-m" style="display: none;"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span></div>
                 </div>
                 
                 <div style="text-align: right; margin-top: 15px; font-size: 1.3rem; color: #8e44ad; font-weight: bold; border-top: 2px dashed #c39bd3; padding-top: 10px;">
-                    TOTALE MUTUO: <span id="totaleMutuoLBL">€ 0,00</span>
+                    TOTALE MUTUO: 
+                    <span id="totaleMutuoLBL">€ 0,00</span>
+                    <span class="linea-totale-mutuo-vuota"></span>
                 </div>
             </div>`;
         }
@@ -410,11 +434,14 @@
             <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; border: 1px solid #3498db;">
                 <label style="color: #2980b9;">Onorario Notarile COMPRAVENDITA (IVA inclusa) (€):</label>
                 <div class="hide-print" style="position: relative; display: flex; align-items: center; gap: 10px; margin-top: 5px;"><span style="font-size: 1.2rem; font-weight: bold; color: #2980b9;">€</span><input type="text" id="onorarioLibero_cv" class="input-valuta input-onorario-stampa" placeholder="es. 1.500,00" style="flex: 1; font-size: 1.2rem; font-weight: bold; color: #2c3e50; text-align: right !important;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici()"></div>
-                <div id="print_onorarioLibero_cv" class="mostra-print print_onorarioLibero_cv" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #2980b9; margin-top: 5px;">€ 0,00</div><div class="linea-onorario-vuota" style="display: none;"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span></div>
+                <div id="print_onorarioLibero_cv" class="mostra-print print_onorarioLibero_cv" style="display:none; text-align: right; font-size: 1.2rem; font-weight: bold; color: #2980b9; margin-top: 5px;">€ 0,00</div>
+                <div class="linea-onorario-vuota-cv" style="display: none;"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px;">€</span></div>
             </div>
             
             <div style="text-align: right; margin-top: 15px; font-size: 1.3rem; color: #2c3e50; font-weight: bold; border-top: 2px dashed #bdc3c7; padding-top: 10px;">
-                TOTALE VENDITA: <span id="totaleVenditaLBL">€ 0,00</span>
+                TOTALE VENDITA: 
+                <span id="totaleVenditaLBL">€ 0,00</span>
+                <span class="linea-totale-vendita-vuota"></span>
             </div>
 
             ${noteSpecialiHTML}
@@ -462,8 +489,12 @@
         let subTotVendita = totTasseCV + onor_cv;
         if(document.getElementById('totaleVenditaLBL')) document.getElementById('totaleVenditaLBL').innerText = formatEuro(subTotVendita);
 
-        let totTasseM = 0; let onor_m = 0; let subTotMutuo = 0;
+        // Controllo classe vuota Vendita
+        if (onor_cv === 0) { document.body.classList.add('vendita-vuota'); } else { document.body.classList.remove('vendita-vuota'); }
+
+        let totTasseM = 0; let onor_m = 0; let subTotMutuo = 0; let mutuoPresente = false;
         if (document.getElementById('tassaArchivioInput_m')) {
+            mutuoPresente = true;
             let arch_m = syncPrint('tassaArchivioInput_m'); onor_m = syncPrint('onorarioLibero_m');
             let speseExtraM = 0;
             document.querySelectorAll('.input-spesa-extra-m').forEach(el => {
@@ -474,6 +505,9 @@
             document.getElementById('totaleTasseSpeseMutuoLBL').innerText = formatEuro(totTasseM);
             subTotMutuo = totTasseM + onor_m;
             if(document.getElementById('totaleMutuoLBL')) document.getElementById('totaleMutuoLBL').innerText = formatEuro(subTotMutuo);
+            
+            // Controllo classe vuota Mutuo
+            if (onor_m === 0) { document.body.classList.add('mutuo-vuoto'); } else { document.body.classList.remove('mutuo-vuoto'); }
         }
 
         const granTotale = subTotVendita + subTotMutuo;
@@ -481,7 +515,14 @@
         
         if(document.getElementById('valoreTotaleStampa')) document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
 
-        if (onorariTotali > 0) {
+        // Controllo classe vuota Gran Totale (Effetto Domino)
+        if (onor_cv === 0 || (mutuoPresente && onor_m === 0)) {
+            document.body.classList.add('totale-vuoto');
+        } else {
+            document.body.classList.remove('totale-vuoto');
+        }
+
+        if (onorariTotali > 0 && !document.body.classList.contains('totale-vuoto')) {
             const imponibileNetto = onorariTotali / 1.2688;
             const cassaNaz = imponibileNetto * 0.04;
             const iva = (imponibileNetto + cassaNaz) * 0.22;
@@ -499,7 +540,6 @@
         }
     }
 
-    // --- NUOVA FUNZIONE ESPORTA BOZZA ---
     function esportaBozza() {
         let bozza = {
             tipoSoftware: 'StudioNotarileBozza', tipoAtto: 'cv',
@@ -537,7 +577,6 @@
         a.download = safeName + ".bozza"; a.click();
     }
 
-    // --- NUOVA FUNZIONE CARICA BOZZA ---
     function controllaBozzaSospesa() {
         let datiStr = localStorage.getItem('praticaInSospeso');
         if (datiStr) {
@@ -589,37 +628,50 @@
 
     function salvaTesto() {
         let testo = "PREVENTIVO COMPRAVENDITA E MUTUO\n======================================\n";
-        testo += "Pratica: " + (document.getElementById('nomePratica').value || "Non specificata") + "\n"; testo += "Data: " + new Date().toLocaleDateString('it-IT') + "\n"; testo += "Operatore: " + (document.getElementById('nomeImpiegato').value || "Non specificato") + "\n\n";
+        testo += "Pratica: " + (document.getElementById('nomePratica').value || "Non specificata") + "\n";
+        testo += "Data: " + new Date().toLocaleDateString('it-IT') + "\n";
+        testo += "Operatore: " + (document.getElementById('nomeImpiegato').value || "Non specificato") + "\n\n";
         
         let righe = document.querySelectorAll('#risultatoPreventivo table tr');
         righe.forEach(r => {
             let celle = r.querySelectorAll('th, td');
             if(celle.length === 2) {
-                let voce = celle[0].innerText.replace(/\n/g, ' ').replace(/- /g, '').trim(); let importo = ""; let input = celle[1].querySelector('input');
+                let voce = celle[0].innerText.replace(/\n/g, ' ').replace(/- /g, '').trim();
+                let importo = ""; let input = celle[1].querySelector('input');
                 if(input) { importo = "€ " + input.value; } else { importo = celle[1].innerText.replace(/\n/g, ' ').trim(); }
                 if(voce !== "Tasse ed Imposte" && voce !== "Importo") { testo += voce + ": \t" + importo + "\n"; }
             }
         });
         
-        let onCV = document.getElementById('onorarioLibero_cv'); testo += "\nOnorario Compravendita: \t€ " + (onCV && onCV.value ? onCV.value : "0,00") + "\n";
-        testo += "TOTALE VENDITA: \t" + (document.getElementById('totaleVenditaLBL') ? document.getElementById('totaleVenditaLBL').innerText : "€ 0,00") + "\n\n";
+        let onCV = document.getElementById('onorarioLibero_cv'); 
+        let valOnCV = onCV && onCV.value ? onCV.value : "";
+        testo += "\nOnorario Compravendita: \t" + (valOnCV ? "€ " + valOnCV : "€ ........................") + "\n";
+        testo += "TOTALE VENDITA: \t" + (valOnCV ? (document.getElementById('totaleVenditaLBL') ? document.getElementById('totaleVenditaLBL').innerText : "€ 0,00") : "€ ........................") + "\n\n";
 
         let onM = document.getElementById('onorarioLibero_m'); 
         if (onM) { 
-            testo += "Onorario Mutuo: \t€ " + (onM.value ? onM.value : "0,00") + "\n"; 
-            testo += "TOTALE MUTUO: \t" + (document.getElementById('totaleMutuoLBL') ? document.getElementById('totaleMutuoLBL').innerText : "€ 0,00") + "\n\n";
+            let valOnM = onM.value ? onM.value : "";
+            testo += "Onorario Mutuo: \t" + (valOnM ? "€ " + valOnM : "€ ........................") + "\n"; 
+            testo += "TOTALE MUTUO: \t" + (valOnM ? (document.getElementById('totaleMutuoLBL') ? document.getElementById('totaleMutuoLBL').innerText : "€ 0,00") : "€ ........................") + "\n\n";
         }
         
         if(document.getElementById('valoreTotaleStampa') && document.getElementById('totaleFinaleBox').style.display !== 'none') {
-            testo += "GRAN TOTALE COMPLESSIVO: \t" + document.getElementById('valoreTotaleStampa').innerText + "\n";
+            let isVuoto = document.body.classList.contains('totale-vuoto');
+            testo += "GRAN TOTALE COMPLESSIVO: \t" + (isVuoto ? "€ ........................" : document.getElementById('valoreTotaleStampa').innerText) + "\n";
         }
         
         if (document.getElementById('riepilogoContabile') && document.getElementById('riepilogoContabile').style.display === 'block') {
             testo += "\n--------------------------------------\nRIEPILOGO CONTABILE PER FATTURAZIONE:\n";
-            testo += "Imponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\n"; testo += "Cassa Notariato (4%): \t" + document.getElementById('cont_cassa').innerText + "\n"; testo += "IVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\n"; testo += "Anticipazioni Esenti: \t" + document.getElementById('cont_esenti').innerText + "\n";
+            testo += "Imponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\n";
+            testo += "Cassa Notariato (4%): \t" + document.getElementById('cont_cassa').innerText + "\n";
+            testo += "IVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\n";
+            testo += "Anticipazioni Esenti: \t" + document.getElementById('cont_esenti').innerText + "\n";
         }
         
-        let blob = new Blob([testo], { type: "text/plain;charset=utf-8" }); let link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "Preventivo_CV_" + (document.getElementById('nomePratica').value || "Preventivo").replace(/[^a-zA-Z0-9]/g, '_') + ".txt"; link.click();
+        let blob = new Blob([testo], { type: "text/plain;charset=utf-8" }); 
+        let link = document.createElement("a"); link.href = URL.createObjectURL(blob); 
+        link.download = "Preventivo_CV_" + (document.getElementById('nomePratica').value || "Preventivo").replace(/[^a-zA-Z0-9]/g, '_') + ".txt"; 
+        link.click();
     }
 </script>
 </body>
