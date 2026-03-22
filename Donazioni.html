@@ -89,7 +89,7 @@
         </div>
         
         <div class="avviso-legale">
-            ✅ <strong>Multi-Beneficiario:</strong> Il calcolatore ora supporta donazioni a più beneficiari nello stesso atto. Il sistema calcolerà franchigie separate per ogni figlio/ricevente, applicando i costi fissi notarili (Bollo, Trascrizione) una sola volta sull'intero atto.
+            ✅ <strong>Multi-Beneficiario:</strong> Il calcolatore supporta donazioni a più beneficiari. Il sistema calcolerà franchigie separate per ogni ricevente, applicando i costi fissi notarili (Bollo, Trascrizione) una sola volta sull'intero atto.
         </div>
 
         <div class="toggle-container">
@@ -119,7 +119,7 @@
         </div>
 
         <div class="box-guida">
-            💡 <strong>Istruzioni:</strong> Aggiungi tutti i beni. Specifica <strong>chi riceve il bene</strong> (Beneficiario), <strong>da chi proviene</strong> (Parentela) e la quota.
+            💡 <strong>Istruzioni:</strong> Aggiungi i beni. Il programma compilerà il <strong>Valore Commerciale</strong> copiando il Valore Fiscale calcolato. Se l'immobile vale di più, sovrascrivi la casella arancione.
         </div>
         
         <div id="contenitoreBeni"></div>
@@ -131,7 +131,7 @@
 
         <div style="border-top: 2px solid #e74c3c; margin-top: 25px; padding-top: 15px;">
             <h4 style="color: #c0392b; margin-top: 0;">Coacervo: Donazioni Pregresse</h4>
-            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">Inserisci eventuali donazioni passate per calcolare l'erosione della franchigia di ogni singolo beneficiario.</div>
+            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">Inserisci eventuali donazioni passate per calcolare l'erosione della franchigia.</div>
             <div id="contenitorePregresse"></div>
             <button type="button" class="secondary" onclick="aggiungiPregressa()" style="padding: 8px; font-size: 0.9rem; background: #e74c3c;">+ Aggiungi Donazione Pregressa</button>
         </div>
@@ -214,7 +214,6 @@
         box.style.display = box.style.display === 'block' ? 'none' : 'block';
     }
 
-    // --- LOGICA USUFRUTTO E NUDA PROPRIETÀ ---
     function gestisciDiritto(selectElement) {
         const blocco = selectElement.closest('.item-donazione');
         const boxEta = blocco.querySelector('.box-eta');
@@ -266,7 +265,7 @@
         if (!blocco) return;
         
         const inputRendita = blocco.querySelector('.rendita-catastale');
-        const inputValore = blocco.querySelector('.valore-bene');
+        const inputValoreFiscale = blocco.querySelector('.valore-bene');
         const selectCat = blocco.querySelector('.cat-catastale-donazione');
         const checkPC = blocco.querySelector('.check-primacasa');
         
@@ -291,7 +290,16 @@
         let valoreQuota = valoreIntero * (qNum / qDen);
         let valoreDiritti = valoreQuota * (percDiritto / 100);
         
-        inputValore.value = formatNumberStr(valoreDiritti);
+        let valFormattato = formatNumberStr(valoreDiritti);
+        
+        // Imposta il Valore Fiscale calcolato
+        inputValoreFiscale.value = valFormattato;
+        
+        // AUTO-FILL del Valore Commerciale per facilitare l'operatore
+        const inputComm = blocco.querySelector('.valore-commerciale');
+        if(inputComm) {
+            inputComm.value = valFormattato;
+        }
     }
 
     function gestisciAgevolazioniDonazione(selectElement, checkboxId) {
@@ -375,9 +383,12 @@
             <label style="margin-top: 15px; color: #16a085;">Rendita Catastale Intera / Reddito Dominicale intero (€):</label>
             <input type="text" class="rendita-catastale input-valuta" placeholder="es. 500,00" style="text-align: right; border-color: #1abc9c;" autocomplete="off" oninput="formattaValuta(this); calcolaValoreCatastale(this)" onblur="formattaDecimale(this)">
 
-            <label style="margin-top: 15px;">Valore Imponibile Calcolato per la Quota/Diritto (€): <span class="tooltip" title="Sovrascrivi questo valore se il prezzo di mercato è superiore a quello catastale calcolato.">i</span></label>
+            <label style="margin-top: 15px;">Valore Fiscale/Catastale per la Quota/Diritto (€): <span class="tooltip" title="Calcolato dalla rendita. Serve esclusivamente per il calcolo delle imposte allo Stato.">i</span></label>
             <input type="text" class="valore-bene input-valuta" placeholder="es. 150.000,00" style="text-align: right; font-weight: bold; color: #2c3e50; background: #eaf2f8;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             
+            <label style="margin-top: 15px; color: #d35400;">Valore Commerciale Reale Dichiarato (€): <span class="tooltip" title="Valore di mercato per la registrazione a Repertorio e il calcolo della Tassa d'Archivio/Onorario. Viene precompilato, sovrascrivilo se l'immobile vale di più.">i</span></label>
+            <input type="text" class="valore-commerciale input-valuta" placeholder="es. 150.000,00" style="text-align: right; font-weight: bold; color: #d35400; background: #fdf2e9; border-color: #e67e22;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+
             <div class="toggle-container box-agevolazione" style="background: #e8f4f8; border-color: #3498db; margin-top: 10px; padding: 10px;">
                 <input type="checkbox" class="check-primacasa" id="pc_${contatoreBeni}" autocomplete="off" onchange="calcolaValoreCatastale(this)">
                 <label for="pc_${contatoreBeni}" style="color: #2980b9; font-size: 0.9rem;">Richiesta Agevolazione Prima Casa</label>
@@ -410,7 +421,7 @@
             <label style="margin-top: 15px;">Descrizione del bene:</label>
             <input type="text" class="descrizione-bene" value="Bonifico Bancario" autocomplete="off">
             
-            <label style="margin-top: 15px;">Importo Donato (€):</label>
+            <label style="margin-top: 15px;">Importo Nominale Donato (€):</label>
             <input type="text" class="valore-bene input-valuta" placeholder="es. 50.000,00" style="text-align: right; font-weight: bold; color: #b9770e;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         c.appendChild(b);
@@ -481,7 +492,8 @@
                 percDiritto: isImmobile ? b.querySelector('.perc-diritto').value : 100,
                 descrizione: b.querySelector('.descrizione-bene').value,
                 rendita: isImmobile ? b.querySelector('.rendita-catastale').value : null, 
-                valore: b.querySelector('.valore-bene').value,
+                valoreFiscale: b.querySelector('.valore-bene').value,
+                valoreCommerciale: isImmobile && b.querySelector('.valore-commerciale') ? b.querySelector('.valore-commerciale').value : b.querySelector('.valore-bene').value,
                 primaCasa: isImmobile ? b.querySelector('.check-primacasa').checked : false
             });
         });
@@ -514,8 +526,6 @@
                     if(bozza.datiGenerali.nomePratica) document.getElementById('nomePratica').value = bozza.datiGenerali.nomePratica; 
                     if(bozza.datiGenerali.checkHandicap) document.getElementById('checkHandicap').checked = bozza.datiGenerali.checkHandicap;
 
-                    let fallbackParentela = bozza.datiGenerali.tipoParentela || 'coniuge_retta';
-
                     document.getElementById('contenitoreBeni').innerHTML = '';
                     if (bozza.beni) {
                         bozza.beni.forEach(b => {
@@ -524,7 +534,7 @@
                                 let blocks = document.querySelectorAll('.blocco-immobile');
                                 let blocco = blocks[blocks.length - 1];
                                 if(b.beneficiario) blocco.querySelector('.nome-beneficiario').value = b.beneficiario;
-                                blocco.querySelector('.tipo-parentela-bene').value = b.parentela || fallbackParentela;
+                                blocco.querySelector('.tipo-parentela-bene').value = b.parentela || 'coniuge_retta';
                                 blocco.querySelector('.cat-catastale-donazione').value = b.cat || 'A2';
                                 blocco.querySelector('.quota-num').value = b.quotaNum || 1;
                                 blocco.querySelector('.quota-den').value = b.quotaDen || 1;
@@ -535,7 +545,10 @@
                                 
                                 blocco.querySelector('.descrizione-bene').value = b.descrizione || '';
                                 blocco.querySelector('.rendita-catastale').value = b.rendita || ''; 
-                                blocco.querySelector('.valore-bene').value = b.valore || '';
+                                blocco.querySelector('.valore-bene').value = b.valoreFiscale || b.valore || '';
+                                if(blocco.querySelector('.valore-commerciale')) {
+                                    blocco.querySelector('.valore-commerciale').value = b.valoreCommerciale || b.valoreFiscale || b.valore || '';
+                                }
                                 blocco.querySelector('.check-primacasa').checked = b.primaCasa || false;
                                 gestisciAgevolazioniDonazione(blocco.querySelector('.cat-catastale-donazione'), blocco.querySelector('.check-primacasa').id);
                             } else {
@@ -543,9 +556,9 @@
                                 let blocks = document.querySelectorAll('.blocco-denaro');
                                 let blocco = blocks[blocks.length - 1];
                                 if(b.beneficiario) blocco.querySelector('.nome-beneficiario').value = b.beneficiario;
-                                blocco.querySelector('.tipo-parentela-bene').value = b.parentela || fallbackParentela;
+                                blocco.querySelector('.tipo-parentela-bene').value = b.parentela || 'coniuge_retta';
                                 blocco.querySelector('.descrizione-bene').value = b.descrizione || '';
-                                blocco.querySelector('.valore-bene').value = b.valore || '';
+                                blocco.querySelector('.valore-bene').value = b.valoreFiscale || b.valore || '';
                             }
                         });
                     }
@@ -635,7 +648,6 @@
         vaiAlloStep(3);
         const isHandicap = document.getElementById('checkHandicap').checked;
         
-        // Creazione dinamica dei gruppi (Beneficiario + Parentela)
         let gruppiDonazione = {};
 
         function inizializzaGruppoSeNuovo(nomeBeneficiario, chiaveParentela) {
@@ -647,7 +659,7 @@
                     nomeParentela: dati.nomeBreve,
                     franchigia: dati.franchigia,
                     aliquota: dati.aliquota,
-                    valore: 0,
+                    valoreFiscaleTotale: 0,
                     pregresse: 0
                 };
             }
@@ -664,25 +676,42 @@
             gruppiDonazione[key].pregresse += parseFloat(valStr) || 0;
         });
 
-        let totaleMassaGlobale = 0;
+        let totaleMassaGlobaleCommerciale = 0; // Usata per Tassa Archivio/Repertorio
         let hasImmobili = false;
-        let imponibileImmobiliOrdinari = 0;
+        let imponibileImmobiliOrdinariFiscale = 0;
         let hasImmobiliPrimaCasa = false;
         let riepilogoHTML = "";
 
-        // Lettura di tutti i beni inseriti
+        // Lettura dei beni inseriti e sdoppiamento binari
         items.forEach((item, index) => {
             const num = index + 1;
             const nomeBen = item.querySelector('.nome-beneficiario').value.trim() || "BENEFICIARIO 1";
             const parentelaBene = item.querySelector('.tipo-parentela-bene').value;
             const desc = item.querySelector('.descrizione-bene').value || "Bene non specificato";
-            const valStr = item.querySelector('.valore-bene').value.replace(/\./g, "").replace(",", ".");
-            const valore = parseFloat(valStr) || 0;
             
-            totaleMassaGlobale += valore;
+            // Lettura Valore Fiscale (Per le Tasse)
+            const valFiscaleStr = item.querySelector('.valore-bene').value.replace(/\./g, "").replace(",", ".");
+            const valoreFiscale = parseFloat(valFiscaleStr) || 0;
+            
+            // Lettura Valore Commerciale (Per il Repertorio). Se non c'è il campo, coincide col fiscale.
+            let valoreCommerciale = valoreFiscale;
+            if (item.classList.contains('blocco-immobile')) {
+                const valCommStr = item.querySelector('.valore-commerciale').value.replace(/\./g, "").replace(",", ".");
+                valoreCommerciale = parseFloat(valCommStr) || valoreFiscale;
+            }
+
+            totaleMassaGlobaleCommerciale += valoreCommerciale;
             
             let key = inizializzaGruppoSeNuovo(nomeBen, parentelaBene);
-            gruppiDonazione[key].valore += valore;
+            gruppiDonazione[key].valoreFiscaleTotale += valoreFiscale;
+
+            // Formattazione stringa di output in base all'uguaglianza dei valori
+            let stringaValoriStampati = "";
+            if (valoreFiscale === valoreCommerciale) {
+                stringaValoriStampati = `Valore: <strong>${formatEuro(valoreFiscale)}</strong>`;
+            } else {
+                stringaValoriStampati = `Valore Fiscale: <strong>${formatEuro(valoreFiscale)}</strong> - Valore Commerciale: <strong style="color: #d35400;">${formatEuro(valoreCommerciale)}</strong>`;
+            }
 
             if (item.classList.contains('blocco-immobile')) {
                 hasImmobili = true;
@@ -696,28 +725,27 @@
 
                 if (isPC) {
                     hasImmobiliPrimaCasa = true;
-                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (Prima Casa):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Oggetto: ${stringaOggetto} - Valore: <strong style="color: #27ae60;">${formatEuro(valore)}</strong></div>`;
+                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (Prima Casa):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Oggetto: ${stringaOggetto} <br>${stringaValoriStampati.replace('Valore:', '<span style="color: #27ae60;">Valore:</span>').replace('Valore Fiscale:', '<span style="color: #27ae60;">Valore Fiscale:</span>')}</div>`;
                 } else {
-                    imponibileImmobiliOrdinari += valore;
+                    imponibileImmobiliOrdinariFiscale += valoreFiscale;
                     const catSelect = item.querySelector('.cat-catastale-donazione');
                     const nomeCategoria = catSelect ? catSelect.options[catSelect.selectedIndex].text.split(" ")[0] : "Ordinario";
-                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (${nomeCategoria}):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Oggetto: ${stringaOggetto} - Valore: <strong style="color: #2c3e50;">${formatEuro(valore)}</strong></div>`;
+                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (${nomeCategoria}):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Oggetto: ${stringaOggetto} <br>${stringaValoriStampati}</div>`;
                 }
             } else {
-                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro/Mobili #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Importo: <strong>${formatEuro(valore)}</strong></div>`;
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro/Mobili #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Importo: <strong>${formatEuro(valoreFiscale)}</strong></div>`;
             }
         });
 
-        // 1. Calcolo Imposta di Donazione con Coacervo frazionata per beneficiario
+        // 1. Calcolo Imposta di Donazione basata sul Valore Fiscale
         let totaleImpostaDonazione = 0;
         let dettagliDonazioneHTML = "";
 
         for (let key in gruppiDonazione) {
             let g = gruppiDonazione[key];
-            if (g.valore > 0) {
-                // Sottrazione delle donazioni pregresse dalla franchigia personale del beneficiario
+            if (g.valoreFiscaleTotale > 0) {
                 let franchigiaResidua = Math.max(0, g.franchigia - g.pregresse);
-                let imponibileNetto = Math.max(0, g.valore - franchigiaResidua);
+                let imponibileNetto = Math.max(0, g.valoreFiscaleTotale - franchigiaResidua);
                 let impostaGruppo = imponibileNetto * g.aliquota;
                 totaleImpostaDonazione += impostaGruppo;
                 
@@ -725,9 +753,9 @@
 
                 dettagliDonazioneHTML += `
                     <div style="margin-top: 10px; padding-top: 5px; border-top: 1px dotted #ccc; font-size: 0.85rem;">
-                        <strong>A: ${g.beneficiario}</strong> (Da ${g.nomeParentela}): Nuova donazione <strong>${formatEuro(g.valore)}</strong>
+                        <strong>A: ${g.beneficiario}</strong> (Da ${g.nomeParentela}): Nuova base imponibile <strong>${formatEuro(g.valoreFiscaleTotale)}</strong>
                         ${rigaPregresseHTML}
-                        <br>Franchigia utilizzata: -${formatEuro(Math.min(g.valore, franchigiaResidua))} ➔ Base Tassabile: <strong>${formatEuro(imponibileNetto)}</strong><br>
+                        <br>Franchigia utilizzata: -${formatEuro(Math.min(g.valoreFiscaleTotale, franchigiaResidua))} ➔ Base Tassabile: <strong>${formatEuro(imponibileNetto)}</strong><br>
                         <span style="color: #8e44ad;">Imposta dovuta: <strong>${formatEuro(impostaGruppo)}</strong></span>
                     </div>`;
             }
@@ -738,12 +766,11 @@
         let impostaCatastale = 0;
 
         if (hasImmobiliPrimaCasa) { impostaIpotecaria += 200; impostaCatastale += 200; }
-        if (imponibileImmobiliOrdinari > 0) {
-            impostaIpotecaria += Math.max(200, imponibileImmobiliOrdinari * 0.02);
-            impostaCatastale += Math.max(200, imponibileImmobiliOrdinari * 0.01);
+        if (imponibileImmobiliOrdinariFiscale > 0) {
+            impostaIpotecaria += Math.max(200, imponibileImmobiliOrdinariFiscale * 0.02);
+            impostaCatastale += Math.max(200, imponibileImmobiliOrdinariFiscale * 0.01);
         }
 
-        // I costi fissi (Bollo e Trascrizione) si applicano UNA sola volta per pratica!
         let impostaBollo = hasImmobili ? 230 : 155;
         let tassaTrascrizioneVoltura = hasImmobili ? 90 : 0;
 
@@ -755,8 +782,9 @@
         });
         if (totaleSpeseExtra > 0) { speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Spese Vive Esenti</td></tr>` + speseExtraHTML; }
 
-        const scaglione = PUB.find(x => totaleMassaGlobale <= x.max) || PUB[PUB.length - 1];
-        const scaglionePrivato = PRIV.find(x => totaleMassaGlobale <= x.max) || PRIV[PRIV.length - 1];
+        // La Tassa Archivio Notarile e lo scaglione si basano sul Valore COMMERCIALE
+        const scaglione = PUB.find(x => totaleMassaGlobaleCommerciale <= x.max) || PUB[PUB.length - 1];
+        const scaglionePrivato = PRIV.find(x => totaleMassaGlobaleCommerciale <= x.max) || PRIV[PRIV.length - 1];
         
         const calcCassa = (rep, sc) => Math.round(rep * sc.c * 100) / 100;
         const calcArch = (rep, cassa) => (Math.round(rep * 0.10 * 100) / 100) + (cassa + Math.round(rep * 0.04 * 100) / 100 + Math.round(rep * 0.002 * 100) / 100 + Math.round(rep * 0.06 * 100) / 100) * 1.22;
@@ -773,11 +801,11 @@
                 <p style="font-size: 0.85rem; color: #7f8c8d; margin: 5px 0 0 0;">Effettuato in data: ${new Date().toLocaleDateString('it-IT')} da: ${document.getElementById('nomeImpiegato').value || "Operatore"}</p>
             </div>
 
-            <h3 style="color: #9b59b6; margin-top: 0;">A. RIEPILOGO ASSET DONATI - Massa Complessiva: ${formatEuro(totaleMassaGlobale)}</h3>
+            <h3 style="color: #9b59b6; margin-top: 0;">A. RIEPILOGO ASSET DONATI - Massa Repertorio: <span style="color: #d35400;">${formatEuro(totaleMassaGlobaleCommerciale)}</span></h3>
             <div style="background: #fafafa; padding: 10px; border: 1px solid #ddd; margin-bottom: 15px;">
                 ${riepilogoHTML}
                 <div id="riepilogoImpostaDonazione" style="background: #f4ecf7; padding: 10px; border-radius: 6px; margin-top: 15px;">
-                    <div style="font-weight: bold; color: #8e44ad; font-size: 0.95rem;">Riepilogo Imposta di Donazione per Beneficiario:</div>
+                    <div style="font-weight: bold; color: #8e44ad; font-size: 0.95rem;">Riepilogo Imposta di Donazione per Beneficiario (Base Fiscale):</div>
                     ${dettagliDonazioneHTML}
                     <div style="margin-top: 10px; padding-top: 5px; border-top: 2px solid #8e44ad; font-weight: bold; text-align: right; color: #8e44ad;">
                         Totale Imposta Donazione: ${formatEuro(totaleImpostaDonazione)}
@@ -803,8 +831,8 @@
                 
                 <tr>
                     <td style="padding: 5px 0; padding-left: 10px; color: #555;">
-                        - Tassa Archivio Notarile
-                        <select id="tipoAttoCV" onchange="cambiaTipoAtto(this, 'tassaArchivioInput', ${totContributiPUB}, ${totContributiPRIV}, ${totaleImposteFisseBase})" style="width: auto; padding: 2px 5px; font-size: 0.8rem; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc; background: #f4ecf7;">
+                        - Tassa Archivio Notarile (Calcolata sulla Massa: ${formatEuro(totaleMassaGlobaleCommerciale)})
+                        <select id="tipoAttoCV" onchange="cambiaTipoAtto(this, 'tassaArchivioInput', ${totContributiPUB}, ${totContributiPRIV}, ${totaleImposteFisseBase})" style="width: auto; padding: 2px 5px; font-size: 0.8rem; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc; background: #fdf2e9;">
                             <option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option>
                         </select>
                     </td>
