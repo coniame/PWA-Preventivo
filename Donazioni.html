@@ -121,7 +121,7 @@
         </div>
 
         <div class="box-guida">
-            💡 <strong>Istruzioni:</strong> Aggiungi i beni. Il programma gestirà in automatico lo sdoppiamento tra valore ai fini fiscali (Tasse) e valore ai fini commerciali (Onorario/Archivio).
+            💡 <strong>Istruzioni:</strong> Aggiungi i beni. Specifica la categoria esatta (es. C/2 o C/6). Il programma bloccherà automaticamente il calcolo se tenti di assegnare la "Prima Casa" a due pertinenze della stessa categoria per lo stesso beneficiario.
         </div>
         
         <div id="contenitoreBeni"></div>
@@ -175,7 +175,7 @@
 
     let scontoCorrenteEuro = 0;
     let baseTassePerSconto = 0;
-    let onorarioConsigliatoRepertorio = 0; // Memorizza l'onorario di tabella
+    let onorarioConsigliatoRepertorio = 0;
 
     window.onload = function() {
         const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
@@ -291,7 +291,6 @@
         let checkPC = blocco.querySelector('.check-primacasa');
         let checkPPC = blocco.querySelector('.check-ppc');
         let isPC = checkPC && checkPC.checked;
-        let isPPC = checkPPC && checkPPC.checked;
 
         if (isPC) { moltiplicatore = 115.5; } 
         else if (categoria === 'A10') { moltiplicatore = 63; } 
@@ -344,8 +343,8 @@
             
             <div style="background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                 <input type="checkbox" class="check-comunione" id="comunione_${contatoreBeni}" autocomplete="off">
-                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Bene in Comunione Legale (es. 2 Genitori)</label>
-                <div style="font-size: 0.75rem; color: #666; margin-top: 3px; margin-left: 25px;">Il valore verrà diviso a metà su due donanti, raddoppiando l'esenzione disponibile.</div>
+                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Bene Cointestato a 2 Donanti (con lo STESSO grado di parentela verso chi riceve)</label>
+                <div style="font-size: 0.75rem; color: #666; margin-top: 3px; margin-left: 25px;">Il valore verrà diviso a metà su due donanti, raddoppiando l'esenzione disponibile. <strong>NON USARE se i donanti hanno gradi di parentela diversi (es. Padre e Zio).</strong></div>
             </div>
 
             <label style="color: #2980b9;">Nome Beneficiario (A chi è donato?):</label>
@@ -388,8 +387,10 @@
             <label style="margin-top: 15px;">Categoria Catastale dell'Immobile:</label>
             <select class="cat-catastale-donazione" onchange="gestisciAgevolazioniDonazione(this, ${contatoreBeni})">
                 <optgroup label="Abitativi e Pertinenze">
-                    <option value="A2" selected>A/2, A/3, A/4... (Abitazione civile)</option>
-                    <option value="C2">C/2, C/6, C/7 (Cantina, Garage, Tettoia)</option>
+                    <option value="A2" selected>Abitazione (A/2, A/3, A/4, A/5, A/6, A/7, A/11)</option>
+                    <option value="C2">C/2 (Cantina, Soffitta, Magazzino)</option>
+                    <option value="C6">C/6 (Box, Garage, Posto Auto)</option>
+                    <option value="C7">C/7 (Tettoia aperta)</option>
                 </optgroup>
                 <optgroup label="Immobili NON Agevolabili o Speciali">
                     <option value="A1">A/1, A/8, A/9 (Abitazioni di Lusso)</option>
@@ -415,7 +416,7 @@
             <div class="toggle-container box-agevolazione-pc" style="background: #e8f4f8; border-color: #3498db; margin-top: 10px; padding: 10px;">
                 <input type="checkbox" class="check-primacasa" id="pc_${contatoreBeni}" autocomplete="off" onchange="calcolaValoreCatastale(this)">
                 <label for="pc_${contatoreBeni}" style="color: #2980b9; font-size: 0.9rem;">Richiesta Agevolazione Prima Casa</label>
-                <div style="font-size: 0.75rem; color: #666; margin-left: 25px; margin-top: 3px;">Fissa Ipotecaria e Catastale a 200€ ciascuna.</div>
+                <div style="font-size: 0.75rem; color: #666; margin-left: 25px; margin-top: 3px;">Fissa Ipotecaria e Catastale a 200€ ciascuna. Al massimo una per categoria.</div>
             </div>
 
             <div class="toggle-container box-agevolazione-ppc" style="display: none; background: #e8f8f5; border-color: #27ae60; margin-top: 10px; padding: 10px;">
@@ -475,7 +476,7 @@
 
             <div style="background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                 <input type="checkbox" class="check-comunione" id="comunione_${contatoreBeni}" autocomplete="off">
-                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Quote in Comunione Legale (es. 2 Genitori)</label>
+                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Quote Cointestate a 2 Donanti (con lo STESSO grado di parentela verso chi riceve)</label>
             </div>
             
             <label style="color: #2980b9;">Nome Beneficiario (A chi sono donate?):</label>
@@ -721,7 +722,6 @@
         link.click();
     }
 
-    // Motore Calcolo
     function getDatiParentela(chiave, isHandicap) {
         if (chiave === 'coniuge_retta') return { franchigia: isHandicap ? 1500000 : 1000000, aliquota: 0.04, nomeBreve: "Linea Retta (4%)" };
         if (chiave === 'fratelli') return { franchigia: isHandicap ? 1500000 : 100000, aliquota: 0.06, nomeBreve: "Fratelli (6%)" };
@@ -735,12 +735,50 @@
 
         scontoCorrenteEuro = 0;
         
+        // --- CONTROLLO DUPLICATI PRIMA CASA SULLE PERTINENZE ---
+        let controlloPrimaCasa = {};
+        let bloccoPerErrore = false;
+        let messaggioErrore = "";
+
+        items.forEach((item) => {
+            if (item.classList.contains('blocco-immobile')) {
+                const nomeBen = item.querySelector('.nome-beneficiario').value.trim().toUpperCase() || "BENEFICIARIO 1";
+                const isPC = item.querySelector('.check-primacasa') && item.querySelector('.check-primacasa').checked;
+                
+                if (isPC) {
+                    const cat = item.querySelector('.cat-catastale-donazione').value;
+                    let tipoCat = cat;
+                    if (cat.startsWith('A')) tipoCat = 'A'; 
+                    
+                    if (!controlloPrimaCasa[nomeBen]) {
+                        controlloPrimaCasa[nomeBen] = {};
+                    }
+
+                    if (controlloPrimaCasa[nomeBen][tipoCat]) {
+                        bloccoPerErrore = true;
+                        if (tipoCat === 'A') {
+                            messaggioErrore = `ERRORE: Il beneficiario ${nomeBen} ha richiesto l'agevolazione Prima Casa su più di un'abitazione principale. La legge ne consente solo una.`;
+                        } else {
+                            messaggioErrore = `ERRORE: Il beneficiario ${nomeBen} ha richiesto l'agevolazione Prima Casa su più pertinenze della stessa categoria (${cat}). La legge consente al massimo una pertinenza per ogni categoria (C/2, C/6, C/7).`;
+                        }
+                    } else {
+                        controlloPrimaCasa[nomeBen][tipoCat] = true;
+                    }
+                }
+            }
+        });
+
+        if (bloccoPerErrore) {
+            alert(messaggioErrore);
+            return; // Blocca il calcolo se ci sono doppioni illegali
+        }
+        // --------------------------------------------------------
+
         vaiAlloStep(3);
         const isHandicap = document.getElementById('checkHandicap').checked;
         
         let gruppiDonazione = {};
 
-        // Inizializza il gruppo permettendo di differenziare il donante (utile per Comunione Legale)
         function inizializzaGruppoSeNuovo(nomeBeneficiario, chiaveParentela, idDonante = 1) {
             let key = nomeBeneficiario.toUpperCase() + "_" + chiaveParentela + "_" + idDonante;
             if (!gruppiDonazione[key]) {
@@ -765,7 +803,6 @@
             let catParentela = p.querySelector('.parentela-pregressa').value;
             let valStr = p.querySelector('.valore-pregressa').value.replace(/\./g, "").replace(",", ".");
             
-            // Le pregresse vengono calcolate solo sul Donante 1 di default
             let key = inizializzaGruppoSeNuovo(nomeBen, catParentela, 1);
             gruppiDonazione[key].pregresse += parseFloat(valStr) || 0;
         });
@@ -777,7 +814,6 @@
         let hasImmobiliPrimaCasa = false;
         let riepilogoHTML = "";
 
-        // Lettura dei beni e smistamento su donanti/comunione e indiretta
         items.forEach((item, index) => {
             const num = index + 1;
             const nomeBen = item.querySelector('.nome-beneficiario').value.trim() || "BENEFICIARIO 1";
@@ -816,7 +852,6 @@
                 
                 let valoreFiscaleEffettivo = isIndiretta ? 0 : valoreFiscaleRaw;
 
-                // Gestione Raddoppio Franchigia per Comunione Legale
                 if (!isPPC && !isIndiretta && valoreFiscaleEffettivo > 0) {
                     if (isComunione) {
                         let key1 = inizializzaGruppoSeNuovo(nomeBen, parentelaBene, 1);
@@ -843,7 +878,7 @@
                     const qDen = item.querySelector('.quota-den').value;
                     const dirittoSelect = item.querySelector('.diritto-donato');
                     const nomeDiritto = dirittoSelect.options[dirittoSelect.selectedIndex].text;
-                    let stringaProvenienza = isComunione ? `Comunione Legale` : getDatiParentela(parentelaBene, isHandicap).nomeBreve;
+                    let stringaProvenienza = isComunione ? `2 Donanti Cointestatari` : getDatiParentela(parentelaBene, isHandicap).nomeBreve;
                     
                     let stringaOggetto = `Quota ${qNum}/${qDen} di ${nomeDiritto}`;
 
@@ -901,8 +936,8 @@
         if (hasImmobiliPrimaCasa) { impostaIpotecaria += 200; impostaCatastale += 200; }
         
         if (imponibilePPCFiscale > 0) {
-            impostaIpotecaria += 200; // Ipotecaria fissa per PPC
-            impostaCatastale += Math.max(200, imponibilePPCFiscale * 0.01); // Catastale 1%
+            impostaIpotecaria += 200; 
+            impostaCatastale += Math.max(200, imponibilePPCFiscale * 0.01); 
         }
 
         if (imponibileImmobiliOrdinariFiscale > 0) {
@@ -921,7 +956,6 @@
         });
         if (totaleSpeseExtra > 0) { speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Spese Vive Esenti</td></tr>` + speseExtraHTML; }
 
-        // La Tassa Archivio Notarile e lo scaglione si basano sul Valore COMMERCIALE
         const scaglione = PUB.find(x => totaleMassaGlobaleCommerciale <= x.max) || PUB[PUB.length - 1];
         const scaglionePrivato = PRIV.find(x => totaleMassaGlobaleCommerciale <= x.max) || PRIV[PRIV.length - 1];
         
@@ -934,7 +968,7 @@
         const totContributiPRIV = calcArch(scaglionePrivato.h["100%"] || 0, calcCassa(scaglionePrivato.h["100%"] || 0, scaglionePrivato));
 
         const totaleImposteFisseBase = totaleImpostaDonazione + impostaRegistro + impostaIpotecaria + impostaCatastale + impostaBollo + tassaTrascrizioneVoltura + totaleSpeseExtra;
-        baseTassePerSconto = totaleImposteFisseBase; // Memorizzata globalmente per i ricalcoli dello sconto
+        baseTassePerSconto = totaleImposteFisseBase; 
 
         document.getElementById('risultatoPreventivo').innerHTML = `
             <div style="text-align: center; border-bottom: 2px solid #8e44ad; padding-bottom: 10px; margin-bottom: 20px;">
