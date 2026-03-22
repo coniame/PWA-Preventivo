@@ -120,7 +120,7 @@
         <h3>Fase 2: Oggetto della Donazione</h3>
         
         <div class="box-guida">
-            💡 <strong>Istruzioni:</strong> Aggiungi tutti gli immobili e/o le somme di denaro trasferite al singolo beneficiario. Il sistema sommerà tutto per calcolare la base imponibile della Donazione.
+            💡 <strong>Istruzioni:</strong> Aggiungi tutti gli immobili. Inserendo la Rendita Catastale, il sistema proporrà in automatico il Valore Catastale di legge (se serve, potrai sovrascriverlo con un valore superiore).
         </div>
 
         <div id="contenitoreBeni"></div>
@@ -260,6 +260,40 @@
         else { box.style.display = 'block'; }
     }
 
+    // --- NUOVA FUNZIONE: CALCOLO VALORE CATASTALE AUTOMATICO ---
+    function calcolaValoreCatastale(elemento) {
+        const blocco = elemento.closest('.blocco-immobile');
+        if (!blocco) return;
+        
+        const inputRendita = blocco.querySelector('.rendita-catastale');
+        const inputValore = blocco.querySelector('.valore-bene');
+        const selectCat = blocco.querySelector('.cat-catastale-donazione');
+        const checkPC = blocco.querySelector('.check-primacasa');
+
+        let renditaStr = inputRendita.value.replace(/\./g, "").replace(",", ".");
+        let rendita = parseFloat(renditaStr) || 0;
+
+        if (rendita === 0) return; // Se il campo rendita è vuoto o a zero, non calcola nulla
+
+        let moltiplicatore = 126; // Default per abitazioni e pertinenze ordinarie (A e C) (rivalutato 5% * 120)
+        let categoria = selectCat.value;
+
+        if (checkPC.checked) {
+            moltiplicatore = 115.5; // (110 * 1.05)
+        } else if (categoria === 'A10') {
+            moltiplicatore = 63; // Uffici (60 * 1.05)
+        } else if (categoria === 'C1' || categoria === 'C3') {
+            moltiplicatore = 42.84; // Negozi e Laboratori (40.8 * 1.05)
+        } else if (categoria === 'TERRENO') {
+            moltiplicatore = 112.5; // Terreni (90 * 1.25, assumendo sia reddito dominicale base)
+        }
+
+        let valoreCalcolato = rendita * moltiplicatore;
+        
+        // Sovrascrive il campo del Valore Imponibile con il nuovo calcolo
+        inputValore.value = formatNumberStr(valoreCalcolato);
+    }
+
     // GESTIONE AGEVOLAZIONI IN BASE ALLA CATEGORIA
     function gestisciAgevolazioniDonazione(selectElement, checkboxId) {
         const categoria = selectElement.value;
@@ -275,6 +309,9 @@
             checkbox.disabled = false;
             boxContainer.style.opacity = "1";
         }
+        
+        // Quando cambi categoria o blocchi/sblocchi la spunta, lancia il ricalcolo della rendita!
+        calcolaValoreCatastale(selectElement);
     }
 
     let contatoreBeni = 0;
@@ -305,11 +342,14 @@
             <label style="margin-top: 15px;">Descrizione / Indirizzo:</label>
             <input type="text" class="descrizione-bene" placeholder="es. Immobile in Via Roma" autocomplete="off">
             
-            <label style="margin-top: 15px;">Valore Imponibile Dichiarato per la quota donata (€): <span class="tooltip" title="Inserisci il valore catastale rivalutato o un valore di mercato superiore, relativo ESCLUSIVAMENTE alla quota donata.">i</span></label>
+            <label style="margin-top: 15px; color: #16a085;">Rendita Catastale / Redd. Dominicale della quota (€):</label>
+            <input type="text" class="rendita-catastale input-valuta" placeholder="es. 500,00" style="text-align: right; border-color: #1abc9c;" autocomplete="off" oninput="formattaValuta(this); calcolaValoreCatastale(this)" onblur="formattaDecimale(this)">
+
+            <label style="margin-top: 15px;">Valore Imponibile Dichiarato per la quota donata (€): <span class="tooltip" title="Questo campo si autocompila in base alla Rendita, ma puoi sovrascriverlo se il valore commerciale è superiore.">i</span></label>
             <input type="text" class="valore-bene input-valuta" placeholder="es. 150.000,00" style="text-align: right; font-weight: bold; color: #2c3e50;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             
             <div class="toggle-container box-agevolazione" style="background: #e8f4f8; border-color: #3498db; margin-top: 10px; padding: 10px;">
-                <input type="checkbox" class="check-primacasa" id="pc_${contatoreBeni}" autocomplete="off">
+                <input type="checkbox" class="check-primacasa" id="pc_${contatoreBeni}" autocomplete="off" onchange="calcolaValoreCatastale(this)">
                 <label for="pc_${contatoreBeni}" style="color: #2980b9; font-size: 0.9rem;">Richiesta Agevolazione Prima Casa</label>
                 <div style="font-size: 0.75rem; color: #666; margin-left: 25px; margin-top: 3px;">Fissa Ipotecaria e Catastale a 200€ ciascuna.</div>
             </div>
@@ -374,6 +414,7 @@
                 tipo: isImmobile ? 'immobile' : 'denaro',
                 cat: isImmobile ? b.querySelector('.cat-catastale-donazione').value : null,
                 descrizione: b.querySelector('.descrizione-bene').value,
+                rendita: isImmobile ? b.querySelector('.rendita-catastale').value : null, // Salvataggio della Rendita
                 valore: b.querySelector('.valore-bene').value,
                 primaCasa: isImmobile ? b.querySelector('.check-primacasa').checked : false
             });
@@ -416,6 +457,7 @@
                                 let blocco = blocks[blocks.length - 1];
                                 blocco.querySelector('.cat-catastale-donazione').value = b.cat || 'A2';
                                 blocco.querySelector('.descrizione-bene').value = b.descrizione || '';
+                                blocco.querySelector('.rendita-catastale').value = b.rendita || ''; // Ripristino della Rendita
                                 blocco.querySelector('.valore-bene').value = b.valore || '';
                                 blocco.querySelector('.check-primacasa').checked = b.primaCasa || false;
                                 gestisciAgevolazioniDonazione(blocco.querySelector('.cat-catastale-donazione'), blocco.querySelector('.check-primacasa').id);
