@@ -35,7 +35,7 @@
         
         .box-guida { background: #e3f2fd; border-left: 4px solid #3498db; padding: 10px; margin-top: 15px; margin-bottom: 5px; font-size: 0.85rem; color: #2c3e50; border-radius: 0 6px 6px 0; line-height: 1.4; }
         .box-guida strong { color: #2980b9; }
-        .avviso-legale { background: #fff9c4; border-left: 4px solid #f39c12; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 0.8rem; color: #d35400; }
+        .avviso-legale { background: #e8f4f8; border-left: 4px solid #3498db; padding: 10px; margin-top: 10px; border-radius: 8px; font-size: 0.8rem; color: #2c3e50; }
         
         .box-help-parentela { background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; margin-top: 5px; border-radius: 8px; font-size: 0.8rem; color: #16a085; display: none; }
         .box-help-parentela ul { margin: 5px 0; padding-left: 20px; }
@@ -84,15 +84,18 @@
             <label style="margin-top: 0;">Nome Impiegato:</label>
             <input type="text" id="nomeImpiegato" placeholder="Es. Mario Rossi" autocomplete="off">
             
-            <label>Pratica / Beneficiario:</label>
-            <input type="text" id="nomePratica" placeholder="Es. Donazione Rossi a favore di Verdi" autocomplete="off">
-            <div style="font-size: 0.8rem; color: #d35400; margin-top: 5px;">⚠️ Il calcolatore supporta <strong>un singolo beneficiario (Donatario)</strong> per pratica. Inserisci i beni calcolando le quote a lui destinate.</div>
+            <label>Pratica Notarile:</label>
+            <input type="text" id="nomePratica" placeholder="Es. Donazione Rossi a figli" autocomplete="off">
+        </div>
+        
+        <div class="avviso-legale">
+            ✅ <strong>Multi-Beneficiario:</strong> Il calcolatore ora supporta donazioni a più beneficiari nello stesso atto. Il sistema calcolerà franchigie separate per ogni figlio/ricevente, applicando i costi fissi notarili (Bollo, Trascrizione) una sola volta sull'intero atto.
         </div>
 
         <div class="toggle-container">
             <input type="checkbox" id="checkHandicap" autocomplete="off">
-            <label for="checkHandicap">Beneficiario Portatore di Handicap Grave (L. 104)</label>
-            <div style="font-size: 0.8rem; margin-top: 5px; color: #666; margin-left: 25px;">Eleva la franchigia a 1.500.000 € a prescindere dal grado di parentela di chi dona.</div>
+            <label for="checkHandicap">Presenza di un Beneficiario con Handicap Grave (L. 104)</label>
+            <div style="font-size: 0.8rem; margin-top: 5px; color: #666; margin-left: 25px;">Questa spunta eleva la franchigia a 1.500.000 € in sede di calcolo imposte.</div>
         </div>
 
         <button type="button" onclick="vaiAlloStep(2)">Avanti ➔</button>
@@ -100,7 +103,7 @@
 
     <section id="step2" class="wizard-step">
         <h3>
-            Fase 2: Oggetto e Quote della Donazione 
+            Fase 2: Oggetto, Quote e Beneficiari 
             <button type="button" onclick="toggleHelpParentela()" style="background: #1abc9c; width: auto; padding: 2px 8px; margin: 0; font-size: 0.8rem; float: right;">? Info Gradi</button>
         </h3>
         
@@ -116,7 +119,7 @@
         </div>
 
         <div class="box-guida">
-            💡 <strong>Istruzioni:</strong> Aggiungi tutti i beni. Specifica <strong>chi</strong> è il donante, la <strong>quota</strong> donata (es. 1/2) e se si tratta di nuda proprietà. Il calcolo considererà frazioni e coefficienti in automatico.
+            💡 <strong>Istruzioni:</strong> Aggiungi tutti i beni. Specifica <strong>chi riceve il bene</strong> (Beneficiario), <strong>da chi proviene</strong> (Parentela) e la quota.
         </div>
         
         <div id="contenitoreBeni"></div>
@@ -127,8 +130,8 @@
         </div>
 
         <div style="border-top: 2px solid #e74c3c; margin-top: 25px; padding-top: 15px;">
-            <h4 style="color: #c0392b; margin-top: 0;">Coacervo: Donazioni Pregresse (Erosione Franchigia)</h4>
-            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">Inserisci qui se il beneficiario ha già ricevuto in passato donazioni dalle stesse persone.</div>
+            <h4 style="color: #c0392b; margin-top: 0;">Coacervo: Donazioni Pregresse</h4>
+            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">Inserisci eventuali donazioni passate per calcolare l'erosione della franchigia di ogni singolo beneficiario.</div>
             <div id="contenitorePregresse"></div>
             <button type="button" class="secondary" onclick="aggiungiPregressa()" style="padding: 8px; font-size: 0.9rem; background: #e74c3c;">+ Aggiungi Donazione Pregressa</button>
         </div>
@@ -231,7 +234,6 @@
         const eta = parseInt(inputEta.value) || 0;
         const inputPerc = blocco.querySelector('.perc-diritto');
         
-        // Tabella standard approssimata per Usufrutto basata sull'età
         let percUsufrutto = 10;
         if(eta <= 20) percUsufrutto = 95;
         else if(eta <= 30) percUsufrutto = 90;
@@ -259,7 +261,6 @@
         calcolaValoreCatastale(inputEta);
     }
 
-    // --- CALCOLO VALORE CATASTALE CON QUOTE E DIRITTI ---
     function calcolaValoreCatastale(elemento) {
         const blocco = elemento.closest('.blocco-immobile');
         if (!blocco) return;
@@ -278,7 +279,7 @@
 
         if (rendita === 0) return;
 
-        let moltiplicatore = 126; // Default A/C ordinario
+        let moltiplicatore = 126; 
         let categoria = selectCat.value;
 
         if (checkPC.checked) { moltiplicatore = 115.5; } 
@@ -316,7 +317,10 @@
         b.innerHTML = `
             <h4 style="margin-top: 0; color: #2c3e50;">Immobile #${contatoreBeni} <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X</button></h4>
             
-            <label style="color: #8e44ad;">Grado di Parentela (Da chi proviene questo immobile?):</label>
+            <label style="color: #2980b9;">Nome Beneficiario (A chi è donato?):</label>
+            <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="border-color: #3498db; background: #ebf5fb; font-weight: bold;">
+
+            <label style="color: #8e44ad; margin-top: 15px;">Grado di Parentela (Da chi proviene questo immobile?):</label>
             <select class="tipo-parentela-bene" autocomplete="off" style="border-color: #8e44ad; background: #f4ecf7;">
                 <option value="coniuge_retta">1. Coniuge o Linea Retta (Padre, Figlio...) - Franchigia 1 Milione</option>
                 <option value="fratelli">2. Fratelli e Sorelle - Franchigia 100.000 €</option>
@@ -392,7 +396,10 @@
         b.innerHTML = `
             <h4 style="margin-top: 0; color: #b9770e;">Denaro / Titoli / Mobili <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X</button></h4>
             
-            <label style="color: #8e44ad;">Grado di Parentela (Da chi provengono i soldi?):</label>
+            <label style="color: #2980b9;">Nome Beneficiario (A chi è donato?):</label>
+            <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="border-color: #3498db; background: #ebf5fb; font-weight: bold;">
+
+            <label style="color: #8e44ad; margin-top: 15px;">Grado di Parentela (Da chi provengono i soldi?):</label>
             <select class="tipo-parentela-bene" autocomplete="off" style="border-color: #8e44ad; background: #f4ecf7;">
                 <option value="coniuge_retta">1. Coniuge o Linea Retta - Franchigia 1 Milione</option>
                 <option value="fratelli">2. Fratelli e Sorelle - Franchigia 100.000 €</option>
@@ -414,12 +421,16 @@
         const b = document.createElement('div');
         b.className = 'blocco-pregressa riga-pregressa';
         b.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                <label style="font-size: 0.8rem; color: #c0392b; width: 40%;">A quale Beneficiario?</label>
+                <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="flex: 1; padding: 5px; font-size: 0.9rem;">
+            </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <select class="parentela-pregressa" style="flex: 2; margin-top: 0;">
+                <select class="parentela-pregressa" style="flex: 2; margin-top: 0; padding: 8px;">
                     <option value="coniuge_retta">Linea Retta / Coniuge</option>
                     <option value="fratelli">Fratelli e Sorelle</option>
                 </select>
-                <input type="text" class="valore-pregressa input-valuta" placeholder="Valore Già Donato (€)" style="flex: 1; margin-top: 0; text-align: right;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+                <input type="text" class="valore-pregressa input-valuta" placeholder="Valore Già Donato (€)" style="flex: 1; margin-top: 0; text-align: right; padding: 8px;" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
                 <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()" style="margin-top: 0;">X</button>
             </div>
         `;
@@ -460,6 +471,7 @@
             let isImmobile = b.classList.contains('blocco-immobile');
             bozza.beni.push({
                 tipo: isImmobile ? 'immobile' : 'denaro',
+                beneficiario: b.querySelector('.nome-beneficiario').value,
                 parentela: b.querySelector('.tipo-parentela-bene').value,
                 cat: isImmobile ? b.querySelector('.cat-catastale-donazione').value : null,
                 quotaNum: isImmobile ? b.querySelector('.quota-num').value : 1,
@@ -476,6 +488,7 @@
 
         document.querySelectorAll('.riga-pregressa').forEach(p => {
             bozza.pregresse.push({
+                beneficiario: p.querySelector('.nome-beneficiario').value,
                 parentela: p.querySelector('.parentela-pregressa').value,
                 valore: p.querySelector('.valore-pregressa').value
             });
@@ -510,6 +523,7 @@
                                 aggiungiImmobile();
                                 let blocks = document.querySelectorAll('.blocco-immobile');
                                 let blocco = blocks[blocks.length - 1];
+                                if(b.beneficiario) blocco.querySelector('.nome-beneficiario').value = b.beneficiario;
                                 blocco.querySelector('.tipo-parentela-bene').value = b.parentela || fallbackParentela;
                                 blocco.querySelector('.cat-catastale-donazione').value = b.cat || 'A2';
                                 blocco.querySelector('.quota-num').value = b.quotaNum || 1;
@@ -528,6 +542,7 @@
                                 aggiungiDenaro();
                                 let blocks = document.querySelectorAll('.blocco-denaro');
                                 let blocco = blocks[blocks.length - 1];
+                                if(b.beneficiario) blocco.querySelector('.nome-beneficiario').value = b.beneficiario;
                                 blocco.querySelector('.tipo-parentela-bene').value = b.parentela || fallbackParentela;
                                 blocco.querySelector('.descrizione-bene').value = b.descrizione || '';
                                 blocco.querySelector('.valore-bene').value = b.valore || '';
@@ -541,6 +556,7 @@
                             aggiungiPregressa();
                             let blocks = document.querySelectorAll('.riga-pregressa');
                             let blocco = blocks[blocks.length - 1];
+                            if(p.beneficiario) blocco.querySelector('.nome-beneficiario').value = p.beneficiario;
                             blocco.querySelector('.parentela-pregressa').value = p.parentela;
                             blocco.querySelector('.valore-pregressa').value = p.valore;
                         });
@@ -572,11 +588,11 @@
         
         let divDettagli = document.getElementById('riepilogoImpostaDonazione');
         if (divDettagli) {
-            testo += "Dettaglio Calcolo Imposta di Donazione:\n";
+            testo += "Dettaglio Calcolo Imposta di Donazione (Divisa per Beneficiari):\n";
             testo += divDettagli.innerText.replace(/\n/g, '\n- ').trim() + "\n\n";
         }
 
-        testo += "RIEPILOGO TASSE E SPESE:\n------------------------\n";
+        testo += "RIEPILOGO TASSE E SPESE (Atto Unico):\n------------------------\n";
         let righe = document.querySelectorAll('#risultatoPreventivo table tr');
         righe.forEach(r => {
             let celle = r.querySelectorAll('th, td');
@@ -604,6 +620,13 @@
         link.click();
     }
 
+    // Motore Calcolo
+    function getDatiParentela(chiave, isHandicap) {
+        if (chiave === 'coniuge_retta') return { franchigia: isHandicap ? 1500000 : 1000000, aliquota: 0.04, nomeBreve: "Linea Retta (4%)" };
+        if (chiave === 'fratelli') return { franchigia: isHandicap ? 1500000 : 100000, aliquota: 0.06, nomeBreve: "Fratelli (6%)" };
+        if (chiave === 'parenti_4') return { franchigia: isHandicap ? 1500000 : 0, aliquota: 0.06, nomeBreve: "Parenti 4° (6%)" };
+        if (chiave === 'estranei') return { franchigia: isHandicap ? 1500000 : 0, aliquota: 0.08, nomeBreve: "Estranei (8%)" };
+    }
 
     function avviaCalcoloPreventivo() {
         const items = document.querySelectorAll('.item-donazione');
@@ -612,18 +635,33 @@
         vaiAlloStep(3);
         const isHandicap = document.getElementById('checkHandicap').checked;
         
-        let gruppiParentela = {
-            'coniuge_retta': { valore: 0, pregresse: 0, franchigia: isHandicap ? 1500000 : 1000000, aliquota: 0.04, nome: "Linea Retta / Coniuge (4%)" },
-            'fratelli': { valore: 0, pregresse: 0, franchigia: isHandicap ? 1500000 : 100000, aliquota: 0.06, nome: "Fratelli e Sorelle (6%)" },
-            'parenti_4': { valore: 0, pregresse: 0, franchigia: isHandicap ? 1500000 : 0, aliquota: 0.06, nome: "Parenti 4° / Affini 3° (6%)" },
-            'estranei': { valore: 0, pregresse: 0, franchigia: isHandicap ? 1500000 : 0, aliquota: 0.08, nome: "Estranei (8%)" }
-        };
+        // Creazione dinamica dei gruppi (Beneficiario + Parentela)
+        let gruppiDonazione = {};
+
+        function inizializzaGruppoSeNuovo(nomeBeneficiario, chiaveParentela) {
+            let key = nomeBeneficiario.toUpperCase() + "_" + chiaveParentela;
+            if (!gruppiDonazione[key]) {
+                let dati = getDatiParentela(chiaveParentela, isHandicap);
+                gruppiDonazione[key] = {
+                    beneficiario: nomeBeneficiario.toUpperCase(),
+                    nomeParentela: dati.nomeBreve,
+                    franchigia: dati.franchigia,
+                    aliquota: dati.aliquota,
+                    valore: 0,
+                    pregresse: 0
+                };
+            }
+            return key;
+        }
 
         // Lettura donazioni pregresse (Coacervo)
         document.querySelectorAll('.riga-pregressa').forEach(p => {
+            let nomeBen = p.querySelector('.nome-beneficiario').value.trim() || "BENEFICIARIO 1";
             let catParentela = p.querySelector('.parentela-pregressa').value;
             let valStr = p.querySelector('.valore-pregressa').value.replace(/\./g, "").replace(",", ".");
-            gruppiParentela[catParentela].pregresse += parseFloat(valStr) || 0;
+            
+            let key = inizializzaGruppoSeNuovo(nomeBen, catParentela);
+            gruppiDonazione[key].pregresse += parseFloat(valStr) || 0;
         });
 
         let totaleMassaGlobale = 0;
@@ -635,13 +673,16 @@
         // Lettura di tutti i beni inseriti
         items.forEach((item, index) => {
             const num = index + 1;
+            const nomeBen = item.querySelector('.nome-beneficiario').value.trim() || "BENEFICIARIO 1";
             const parentelaBene = item.querySelector('.tipo-parentela-bene').value;
             const desc = item.querySelector('.descrizione-bene').value || "Bene non specificato";
             const valStr = item.querySelector('.valore-bene').value.replace(/\./g, "").replace(",", ".");
             const valore = parseFloat(valStr) || 0;
             
             totaleMassaGlobale += valore;
-            gruppiParentela[parentelaBene].valore += valore;
+            
+            let key = inizializzaGruppoSeNuovo(nomeBen, parentelaBene);
+            gruppiDonazione[key].valore += valore;
 
             if (item.classList.contains('blocco-immobile')) {
                 hasImmobili = true;
@@ -655,26 +696,26 @@
 
                 if (isPC) {
                     hasImmobiliPrimaCasa = true;
-                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (Prima Casa):</strong> ${desc} <br>Da: <em>${gruppiParentela[parentelaBene].nome}</em> - Oggetto: ${stringaOggetto} - Valore: <strong style="color: #27ae60;">${formatEuro(valore)}</strong></div>`;
+                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (Prima Casa):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Oggetto: ${stringaOggetto} - Valore: <strong style="color: #27ae60;">${formatEuro(valore)}</strong></div>`;
                 } else {
                     imponibileImmobiliOrdinari += valore;
                     const catSelect = item.querySelector('.cat-catastale-donazione');
                     const nomeCategoria = catSelect ? catSelect.options[catSelect.selectedIndex].text.split(" ")[0] : "Ordinario";
-                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (${nomeCategoria}):</strong> ${desc} <br>Da: <em>${gruppiParentela[parentelaBene].nome}</em> - Oggetto: ${stringaOggetto} - Valore: <strong style="color: #2c3e50;">${formatEuro(valore)}</strong></div>`;
+                    riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (${nomeCategoria}):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Oggetto: ${stringaOggetto} - Valore: <strong style="color: #2c3e50;">${formatEuro(valore)}</strong></div>`;
                 }
             } else {
-                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro/Mobili #${num}:</strong> ${desc} <br>Da: <em>${gruppiParentela[parentelaBene].nome}</em> - Importo: <strong>${formatEuro(valore)}</strong></div>`;
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro/Mobili #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${gruppiDonazione[key].nomeParentela}) - Importo: <strong>${formatEuro(valore)}</strong></div>`;
             }
         });
 
-        // 1. Calcolo Imposta di Donazione con Coacervo
+        // 1. Calcolo Imposta di Donazione con Coacervo frazionata per beneficiario
         let totaleImpostaDonazione = 0;
         let dettagliDonazioneHTML = "";
 
-        for (let key in gruppiParentela) {
-            let g = gruppiParentela[key];
+        for (let key in gruppiDonazione) {
+            let g = gruppiDonazione[key];
             if (g.valore > 0) {
-                // Sottrazione delle donazioni pregresse dalla franchigia
+                // Sottrazione delle donazioni pregresse dalla franchigia personale del beneficiario
                 let franchigiaResidua = Math.max(0, g.franchigia - g.pregresse);
                 let imponibileNetto = Math.max(0, g.valore - franchigiaResidua);
                 let impostaGruppo = imponibileNetto * g.aliquota;
@@ -684,7 +725,7 @@
 
                 dettagliDonazioneHTML += `
                     <div style="margin-top: 10px; padding-top: 5px; border-top: 1px dotted #ccc; font-size: 0.85rem;">
-                        <strong>Da ${g.nome}</strong>: Nuova donazione <strong>${formatEuro(g.valore)}</strong>
+                        <strong>A: ${g.beneficiario}</strong> (Da ${g.nomeParentela}): Nuova donazione <strong>${formatEuro(g.valore)}</strong>
                         ${rigaPregresseHTML}
                         <br>Franchigia utilizzata: -${formatEuro(Math.min(g.valore, franchigiaResidua))} ➔ Base Tassabile: <strong>${formatEuro(imponibileNetto)}</strong><br>
                         <span style="color: #8e44ad;">Imposta dovuta: <strong>${formatEuro(impostaGruppo)}</strong></span>
@@ -702,6 +743,7 @@
             impostaCatastale += Math.max(200, imponibileImmobiliOrdinari * 0.01);
         }
 
+        // I costi fissi (Bollo e Trascrizione) si applicano UNA sola volta per pratica!
         let impostaBollo = hasImmobili ? 230 : 155;
         let tassaTrascrizioneVoltura = hasImmobili ? 90 : 0;
 
@@ -735,7 +777,7 @@
             <div style="background: #fafafa; padding: 10px; border: 1px solid #ddd; margin-bottom: 15px;">
                 ${riepilogoHTML}
                 <div id="riepilogoImpostaDonazione" style="background: #f4ecf7; padding: 10px; border-radius: 6px; margin-top: 15px;">
-                    <div style="font-weight: bold; color: #8e44ad; font-size: 0.95rem;">Riepilogo Imposta di Donazione per Provenienza:</div>
+                    <div style="font-weight: bold; color: #8e44ad; font-size: 0.95rem;">Riepilogo Imposta di Donazione per Beneficiario:</div>
                     ${dettagliDonazioneHTML}
                     <div style="margin-top: 10px; padding-top: 5px; border-top: 2px solid #8e44ad; font-weight: bold; text-align: right; color: #8e44ad;">
                         Totale Imposta Donazione: ${formatEuro(totaleImpostaDonazione)}
@@ -744,7 +786,7 @@
             </div>
 
             <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
-                <tr style="border-bottom: 2px solid #333;"><th>Tasse ed Imposte</th><th style="text-align: right;">Importo</th></tr>
+                <tr style="border-bottom: 2px solid #333;"><th>Tasse ed Imposte (Calcolate su Atto Unico)</th><th style="text-align: right;">Importo</th></tr>
                 
                 <tr><td style="padding: 5px 0; color: #8e44ad;"><strong>Imposta di Donazione (Vedi calcolo sopra)</strong></td><td style="text-align: right; color: #8e44ad;"><strong>${formatEuro(totaleImpostaDonazione)}</strong></td></tr>
                 <tr><td style="padding: 5px 0;">Imposta di Registro (Fissa)</td><td style="text-align: right;">${formatEuro(impostaRegistro)}</td></tr>
