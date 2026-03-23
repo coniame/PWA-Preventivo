@@ -196,7 +196,6 @@
     function controllaQuote(inputAgevolata) { const blocco = inputAgevolata.closest('.blocco-immobile'); const qTotale = parseFloat(blocco.querySelector('.quota-totale').value) || 100; const qAgev = parseFloat(inputAgevolata.value) || 0; if (qAgev > qTotale) { inputAgevolata.value = qTotale; } }
     function aggiornaStatoAcquirente() { document.querySelectorAll('.blocco-immobile').forEach(blocco => { bloccaNonAgevolabili(blocco.querySelector('.cat-catastale')); }); }
 
-    // --- NUOVE FUNZIONI PRELIMINARE ---
     function attivaPreliminare(checkbox) {
         document.getElementById('boxPreliminare').style.display = checkbox.checked ? 'block' : 'none';
         if (!checkbox.checked) {
@@ -226,11 +225,16 @@
 
     function bloccaNonAgevolabili(selectElement) {
         const blocco = selectElement.closest('.blocco-immobile'); const agevSelect = blocco.querySelector('.tipo-agevolazione'); const optAccorpamento = blocco.querySelector('.opt-accorpamento'); const inputRendita = blocco.querySelector('.rendita-catastale');
-        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa'; const categoria = selectElement.value; const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8'); const isLusso = (categoria === 'A1'); const isInCostruzione = (categoria === 'F3' || categoria === 'F4'); const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
+        const isSocieta = document.getElementById('tipoAcquirente').value === 'societa'; const categoria = selectElement.value; 
+        const isStrumentale = (categoria === 'A10' || categoria === 'C1' || categoria === 'C3' || categoria === 'D1' || categoria === 'D8'); 
+        const isLusso = (categoria === 'A1'); 
+        const isSenzaRendita = (categoria === 'F3' || categoria === 'F4' || categoria === 'F5'); 
+        const isPertinenza = (categoria === 'C2' || categoria === 'C6' || categoria === 'C7');
+        
         if (isPertinenza) { optAccorpamento.style.display = 'none'; if(agevSelect.value === 'accorpamento') agevSelect.value = 'nessuna'; } else { optAccorpamento.style.display = 'block'; }
-        if (isLusso || isStrumentale || isSocieta) { agevSelect.value = 'nessuna'; agevSelect.disabled = true; agevSelect.closest('.box-agevolazione').style.opacity = "0.5"; } else { agevSelect.disabled = false; agevSelect.closest('.box-agevolazione').style.opacity = "1"; }
+        if (isLusso || isStrumentale || isSocieta || isSenzaRendita) { agevSelect.value = 'nessuna'; agevSelect.disabled = true; agevSelect.closest('.box-agevolazione').style.opacity = "0.5"; } else { agevSelect.disabled = false; agevSelect.closest('.box-agevolazione').style.opacity = "1"; }
         gestisciTipoAgevolazione(agevSelect);
-        if (isStrumentale || isInCostruzione || isSocieta) { inputRendita.disabled = true; inputRendita.value = ""; inputRendita.placeholder = "Calcolo forzato su Prezzo"; inputRendita.style.background = "#eeeeee"; } else { inputRendita.disabled = false; inputRendita.placeholder = "es. 500,00"; inputRendita.style.background = "#fdfdfd"; }
+        if (isStrumentale || isSenzaRendita || isSocieta) { inputRendita.disabled = true; inputRendita.value = ""; inputRendita.placeholder = "Calcolo forzato su Prezzo"; inputRendita.style.background = "#eeeeee"; } else { inputRendita.disabled = false; inputRendita.placeholder = "es. 500,00"; inputRendita.style.background = "#fdfdfd"; }
     }
 
     let contatoreImmobili = 0;
@@ -260,9 +264,10 @@
                     <option value="D1">D/1 - Opifici / Capannoni industriali</option>
                     <option value="D8">D/8 - Fabbricati commerciali grandi</option>
                 </optgroup>
-                <optgroup label="In Costruzione (Senza Rendita)">
+                <optgroup label="Senza Rendita (Categorie F)">
                     <option value="F3">F/3 - Fabbricato in corso di costruzione</option>
                     <option value="F4">F/4 - Fabbricato in corso di definizione</option>
+                    <option value="F5">F/5 - Lastrico Solare</option>
                 </optgroup>
             </select>
             <label>Diritto Acquistato:</label><select class="tipo-diritto" autocomplete="off" onchange="gestisciDiritto(this)"><option value="piena">Piena Proprietà</option><option value="nuda">Nuda Proprietà</option><option value="usufrutto">Usufrutto</option></select>
@@ -325,7 +330,7 @@
                 rendita: parseFloat(blocco.querySelector('.rendita-catastale').value.replace(/\./g, "").replace(",", ".")) || 0,
                 prezzo: parseFloat(blocco.querySelector('.prezzo-dichiarato').value.replace(/\./g, "").replace(",", ".")) || 0,
                 tipoDir: blocco.querySelector('.tipo-diritto').value, dataNas: blocco.querySelector('.data-nascita-usufruttuario').value,
-                isStrumentale: false, isInCostruzione: false, qOrd: 0, notaOttimizzata: false
+                isStrumentale: false, isSenzaRendita: false, qOrd: 0, notaOttimizzata: false
             });
         });
 
@@ -345,13 +350,14 @@
 
         immobiliData.forEach(imm => {
             imm.qOrd = imm.qOrd > 0 ? imm.qOrd : (imm.qTot - imm.qAgev); if (imm.qAgev > 0) haPrimaCasa = true; window.massaCV += imm.prezzo;
-            imm.isStrumentale = (imm.categoria === 'A10' || imm.categoria === 'C1' || imm.categoria === 'C3' || imm.categoria === 'D1' || imm.categoria === 'D8'); imm.isInCostruzione = (imm.categoria === 'F3' || imm.categoria === 'F4');
+            imm.isStrumentale = (imm.categoria === 'A10' || imm.categoria === 'C1' || imm.categoria === 'C3' || imm.categoria === 'D1' || imm.categoria === 'D8'); 
+            imm.isSenzaRendita = (imm.categoria === 'F3' || imm.categoria === 'F4' || imm.categoria === 'F5');
 
             let pctDiritto = 1.0; let etichettaDiritto = "";
             if (imm.tipoDir !== 'piena') { let quote = getPercentualiDiritto(calcolaEta(imm.dataNas)); if (imm.tipoDir === 'nuda') { pctDiritto = quote.np; etichettaDiritto = `<br><span style="color:#d35400;">(Nuda Proprietà)</span>`; } else { pctDiritto = quote.us; etichettaDiritto = `<br><span style="color:#d35400;">(Usufrutto)</span>`; } }
 
             let usaPrezzoValore = false; let imponibileRegistroPC = imm.prezzo * (imm.qAgev / imm.qTot); let imponibileRegistroOrd = imm.prezzo * (imm.qOrd / imm.qTot);
-            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !imm.isStrumentale && !imm.isInCostruzione) { usaPrezzoValore = true; imponibileRegistroPC = imm.rendita * 115.5 * (imm.qAgev / 100) * pctDiritto; imponibileRegistroOrd = imm.rendita * 126 * (imm.qOrd / 100) * pctDiritto; }
+            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !imm.isStrumentale && !imm.isSenzaRendita) { usaPrezzoValore = true; imponibileRegistroPC = imm.rendita * 115.5 * (imm.qAgev / 100) * pctDiritto; imponibileRegistroOrd = imm.rendita * 126 * (imm.qOrd / 100) * pctDiritto; }
 
             let extraNota = imm.notaOttimizzata ? `<strong style="color:#e74c3c;"> (Ottimizzazione Categoria Applicata)</strong>` : ``;
             riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>Fabbricato #${imm.id} (${imm.categoria})</strong>${extraNota} - Quota: ${imm.qTot}% ${etichettaDiritto}<br>`;
@@ -363,7 +369,7 @@
                     if (imm.qOrd > 0) { let impSingolaOrd = imponibileRegistroOrd * 0.09; totaleRegistroProporzionale += impSingolaOrd; riepilogoHTML += `<span style="color: #7f8c8d;">-> Q. Ordinaria: ${calcText} ${formatEuro(imponibileRegistroOrd)} x 9% = <strong>${formatEuro(impSingolaOrd)}</strong></span><br>`; }
                 }
             } else if (regimeVenditore === 'iva_impresa') {
-                let aliqOrd = (imm.categoria === 'A1' || imm.isStrumentale) ? 0.22 : 0.10;
+                let aliqOrd = (imm.categoria === 'A1' || imm.isStrumentale || imm.isSenzaRendita) ? 0.22 : 0.10;
                 if (imm.qAgev > 0) { let ivaSingolaPC = (imm.prezzo * (imm.qAgev/imm.qTot)) * 0.04; totaleIvaVenditore += ivaSingolaPC; riepilogoHTML += `<span style="color: #e74c3c; font-weight:bold;">-> IVA PC: ${formatEuro((imm.prezzo * (imm.qAgev/imm.qTot)))} x 4% = ${formatEuro(ivaSingolaPC)}</span><br>`; }
                 if (imm.qOrd > 0) { let ivaSingolaOrd = (imm.prezzo * (imm.qOrd/imm.qTot)) * aliqOrd; totaleIvaVenditore += ivaSingolaOrd; riepilogoHTML += `<span style="color: #e74c3c; font-weight:bold;">-> IVA Ord: ${formatEuro((imm.prezzo * (imm.qOrd/imm.qTot)))} x ${aliqOrd*100}% = ${formatEuro(ivaSingolaOrd)}</span><br>`; }
                 if (imm.isStrumentale) { flagStrumentaleDaImpresa = true; imponibileStrumentaliPerIpoCatastale += imm.prezzo; }
@@ -397,7 +403,6 @@
             if (creditoDichiarato > 0) { let capienzaMassima = impostaRegistro * (quotaCredito / 100); creditoUtilizzatoOggi = Math.min(creditoDichiarato, capienzaMassima); impostaRegistro -= creditoUtilizzatoOggi; }
             if (regimeVenditore !== 'iva_impresa' && scomputoPreliminare > 0) { preliminareScomputatoOggi = Math.min(scomputoPreliminare, impostaRegistro); impostaRegistro -= preliminareScomputatoOggi; }
             
-            // Correzione Falla Fiscale Voltura 55€ per IVA
             if (regimeVenditore === 'iva_impresa') { 
                 impostaBollo = 230; tassaTrascrizione = 90; tassaVoltura = 55; 
             } else { 
