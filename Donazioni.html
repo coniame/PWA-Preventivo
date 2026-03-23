@@ -121,7 +121,7 @@
         </div>
 
         <div class="box-guida">
-            💡 <strong>Istruzioni:</strong> Aggiungi i beni. Specifica la categoria esatta (es. C/2 o C/6). Il programma bloccherà automaticamente il calcolo se tenti di assegnare la "Prima Casa" a due pertinenze della stessa categoria per lo stesso beneficiario.
+            💡 <strong>Istruzioni:</strong> Aggiungi i beni. Specifica la categoria esatta. Il programma bloccherà automaticamente il calcolo se tenti di assegnare la "Prima Casa" a due pertinenze della stessa categoria. <strong>Le categorie F (Senza Rendita) vanno valorizzate manualmente.</strong>
         </div>
         
         <div id="contenitoreBeni"></div>
@@ -175,7 +175,6 @@
 
     let scontoCorrenteEuro = 0;
     let baseTassePerSconto = 0;
-    let onorarioConsigliatoRepertorio = 0;
 
     window.onload = function() {
         const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
@@ -274,7 +273,11 @@
         const inputRendita = blocco.querySelector('.rendita-catastale');
         const inputValoreFiscale = blocco.querySelector('.valore-bene');
         const selectCat = blocco.querySelector('.cat-catastale-donazione');
+        let categoria = selectCat.value;
         
+        // Se è categoria F, il calcolo da rendita viene bypassato (inserimento manuale)
+        if (categoria.startsWith('F')) return;
+
         const qNum = parseFloat(blocco.querySelector('.quota-num').value) || 1;
         const qDen = parseFloat(blocco.querySelector('.quota-den').value) || 1;
         const percDiritto = parseFloat(blocco.querySelector('.perc-diritto').value) || 100;
@@ -285,11 +288,9 @@
         if (rendita === 0) return;
 
         let moltiplicatore = 126; 
-        let categoria = selectCat.value;
 
         // Gestione PPC vs Prima Casa
         let checkPC = blocco.querySelector('.check-primacasa');
-        let checkPPC = blocco.querySelector('.check-ppc');
         let isPC = checkPC && checkPC.checked;
 
         if (isPC) { moltiplicatore = 115.5; } 
@@ -318,16 +319,37 @@
         const boxPPC = blocco.querySelector('.box-agevolazione-ppc');
         const checkPPC = blocco.querySelector('.check-ppc');
 
-        checkPC.checked = false; checkPC.disabled = true; boxPC.style.display = 'none';
-        checkPPC.checked = false; checkPPC.disabled = true; boxPPC.style.display = 'none';
+        if(checkPC) { checkPC.checked = false; checkPC.disabled = true; }
+        if(boxPC) { boxPC.style.display = 'none'; }
+        if(checkPPC) { checkPPC.checked = false; checkPPC.disabled = true; }
+        if(boxPPC) { boxPPC.style.display = 'none'; }
 
         if (categoria === 'TERRENO') {
-            checkPPC.disabled = false; boxPPC.style.display = 'block';
-        } else if (categoria === 'A1' || categoria === 'C1' || categoria === 'A10' || categoria === 'C3') {
-            // Nessuna agevolazione
+            if(checkPPC) checkPPC.disabled = false; 
+            if(boxPPC) boxPPC.style.display = 'block';
+        } else if (categoria === 'A1' || categoria === 'C1' || categoria === 'A10' || categoria === 'C3' || categoria.startsWith('F')) {
+            // Nessuna agevolazione permessa
         } else {
-            checkPC.disabled = false; boxPC.style.display = 'block';
+            if(checkPC) checkPC.disabled = false; 
+            if(boxPC) boxPPC.style.display = 'block';
         }
+
+        const inputRendita = blocco.querySelector('.rendita-catastale');
+        if (categoria.startsWith('F')) {
+            if(inputRendita) {
+                inputRendita.disabled = true;
+                inputRendita.value = "";
+                inputRendita.placeholder = "Inserire valori a mano";
+                inputRendita.style.background = "#eeeeee";
+            }
+        } else {
+            if(inputRendita) {
+                inputRendita.disabled = false;
+                inputRendita.placeholder = "es. 500,00";
+                inputRendita.style.background = "#fdfdfd";
+            }
+        }
+        
         calcolaValoreCatastale(selectElement);
     }
 
@@ -399,6 +421,11 @@
                     <option value="C3">C/3, D/1, D/8... (Artigianali)</option>
                     <option value="TERRENO">Terreno (Agricolo/Edificabile)</option>
                 </optgroup>
+                <optgroup label="Senza Rendita (Categorie F)">
+                    <option value="F3">F/3 - Fabbricato in corso di costruzione</option>
+                    <option value="F4">F/4 - Fabbricato in corso di definizione</option>
+                    <option value="F5">F/5 - Lastrico Solare</option>
+                </optgroup>
             </select>
 
             <label style="margin-top: 15px;">Descrizione / Indirizzo:</label>
@@ -407,7 +434,7 @@
             <label style="margin-top: 15px; color: #16a085;">Rendita Catastale Intera / Reddito Dominicale intero (€):</label>
             <input type="text" class="rendita-catastale input-valuta" placeholder="es. 500,00" style="text-align: right; border-color: #1abc9c;" autocomplete="off" oninput="formattaValuta(this); calcolaValoreCatastale(this)" onblur="formattaDecimale(this)">
 
-            <label style="margin-top: 15px;">Valore Fiscale/Catastale per la Quota/Diritto (€): <span class="tooltip" title="Calcolato dalla rendita. Serve esclusivamente per il calcolo delle imposte allo Stato.">i</span></label>
+            <label style="margin-top: 15px;">Valore Fiscale/Catastale per la Quota/Diritto (€): <span class="tooltip" title="Calcolato dalla rendita per le abitazioni, da inserire manualmente per i beni categoria F. Serve per il calcolo delle imposte allo Stato.">i</span></label>
             <input type="text" class="valore-bene input-valuta" placeholder="es. 150.000,00" style="text-align: right; font-weight: bold; color: #2c3e50; background: #eaf2f8;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             
             <label style="margin-top: 15px; color: #d35400;">Valore Commerciale Reale Dichiarato (€): <span class="tooltip" title="Valore di mercato per la registrazione a Repertorio e il calcolo della Tassa d'Archivio/Onorario. Viene precompilato, sovrascrivilo se l'immobile vale di più.">i</span></label>
@@ -873,7 +900,7 @@
 
                 if (item.classList.contains('blocco-immobile')) {
                     hasImmobili = true;
-                    const isPC = item.querySelector('.check-primacasa').checked;
+                    const isPC = item.querySelector('.check-primacasa') && item.querySelector('.check-primacasa').checked;
                     const qNum = item.querySelector('.quota-num').value;
                     const qDen = item.querySelector('.quota-den').value;
                     const dirittoSelect = item.querySelector('.diritto-donato');
@@ -974,7 +1001,7 @@
             <div style="text-align: center; border-bottom: 2px solid #8e44ad; padding-bottom: 10px; margin-bottom: 20px;">
                 <h1 style="font-size: 1.8rem; color: #8e44ad; margin: 0;">PREVENTIVO DELLO STUDIO NOTARILE</h1>
                 <h2 style="font-size: 1.1rem; color: #34495e; margin: 5px 0;">Cliente/Pratica: ${document.getElementById('nomePratica').value || "Senza riferimento"}</h2>
-                <p style="font-size: 0.85rem; color: #7f8c8d; margin: 5px 0 0 0;">Effettuato in data: ${new Date().toLocaleDateString('it-IT')} da: ${document.getElementById('nomeImpiegato').value || "Operatore"}</p>
+                <p style="font-size: 0.85rem; color: #7f8c8d; margin: 5px 0 0 0;">Data: ${new Date().toLocaleDateString('it-IT')} da: ${document.getElementById('nomeImpiegato').value || "Operatore"}</p>
             </div>
 
             <h3 style="color: #9b59b6; margin-top: 0;">A. RIEPILOGO ASSET DONATI - Massa Repertorio: <span style="color: #d35400;">${formatEuro(totaleMassaGlobaleCommerciale)}</span></h3>
