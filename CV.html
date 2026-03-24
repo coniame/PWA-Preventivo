@@ -348,25 +348,54 @@
 
         window.massaCV = 0; let totaleRegistroProporzionale = 0; let haPrimaCasa = false; let riepilogoHTML = ""; let totaleIvaVenditore = 0; let flagStrumentaleDaImpresa = false; let imponibileStrumentaliPerIpoCatastale = 0; let totaleCatastalePPC = 0;
 
+        let htmlMutuo = ""; window.tasseFisseBaseMutuo = 0;
+        if (isMutuoAttivo) {
+            window.tasseFisseBaseMutuo = 35; // Tassa fissa Iscrizione Ipotecaria
+        }
+
         immobiliData.forEach(imm => {
             imm.qOrd = imm.qOrd > 0 ? imm.qOrd : (imm.qTot - imm.qAgev); if (imm.qAgev > 0) haPrimaCasa = true; window.massaCV += imm.prezzo;
             imm.isStrumentale = (imm.categoria === 'A10' || imm.categoria === 'C1' || imm.categoria === 'C3' || imm.categoria === 'D1' || imm.categoria === 'D8'); 
             imm.isSenzaRendita = (imm.categoria === 'F3' || imm.categoria === 'F4' || imm.categoria === 'F5');
 
             let pctDiritto = 1.0; let etichettaDiritto = "";
-            if (imm.tipoDir !== 'piena') { let quote = getPercentualiDiritto(calcolaEta(imm.dataNas)); if (imm.tipoDir === 'nuda') { pctDiritto = quote.np; etichettaDiritto = `<br><span style="color:#d35400;">(Nuda Proprietà)</span>`; } else { pctDiritto = quote.us; etichettaDiritto = `<br><span style="color:#d35400;">(Usufrutto)</span>`; } }
+            let labelDir = "Piena Proprietà";
+            if (imm.tipoDir !== 'piena') { 
+                let quote = getPercentualiDiritto(calcolaEta(imm.dataNas)); 
+                if (imm.tipoDir === 'nuda') { pctDiritto = quote.np; labelDir = "Nuda Proprietà"; etichettaDiritto = `<br><span style="color:#d35400;">(Nuda Proprietà)</span>`; } 
+                else { pctDiritto = quote.us; labelDir = "Usufrutto"; etichettaDiritto = `<br><span style="color:#d35400;">(Usufrutto)</span>`; } 
+            }
+
+            let moltOrd = 126;
+            if (imm.categoria === 'A10') moltOrd = 63;
+            else if (imm.categoria === 'C1' || imm.categoria === 'C3') moltOrd = 42.84;
 
             let usaPrezzoValore = false; let imponibileRegistroPC = imm.prezzo * (imm.qAgev / imm.qTot); let imponibileRegistroOrd = imm.prezzo * (imm.qOrd / imm.qTot);
-            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !imm.isStrumentale && !imm.isSenzaRendita) { usaPrezzoValore = true; imponibileRegistroPC = imm.rendita * 115.5 * (imm.qAgev / 100) * pctDiritto; imponibileRegistroOrd = imm.rendita * 126 * (imm.qOrd / 100) * pctDiritto; }
+            if (tipoAcquirente === 'privato' && regimeVenditore !== 'iva_impresa' && !imm.isStrumentale && !imm.isSenzaRendita) { 
+                usaPrezzoValore = true; 
+                imponibileRegistroPC = imm.rendita * 115.5 * (imm.qAgev / 100) * pctDiritto; 
+                imponibileRegistroOrd = imm.rendita * moltOrd * (imm.qOrd / 100) * pctDiritto; 
+            }
 
             let extraNota = imm.notaOttimizzata ? `<strong style="color:#e74c3c;"> (Ottimizzazione Categoria Applicata)</strong>` : ``;
             riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>Fabbricato #${imm.id} (${imm.categoria})</strong>${extraNota} - Quota: ${imm.qTot}% ${etichettaDiritto}<br>`;
 
             if (regimeVenditore === 'registro_privato' || regimeVenditore === 'registro_impresa') {
-                if (imm.isStrumentale && regimeVenditore === 'registro_impresa') { flagStrumentaleDaImpresa = true; imponibileStrumentaliPerIpoCatastale += imm.prezzo; riepilogoHTML += `<strong style="color: #e67e22;">IMMOBILE STRUMENTALE:</strong> Prezzo ${formatEuro(imm.prezzo)}.`; } else {
-                    let calcText = usaPrezzoValore ? "Base Rendita" : "Base Prezzo";
-                    if (imm.qAgev > 0) { let impSingolaPC = imponibileRegistroPC * 0.02; totaleRegistroProporzionale += impSingolaPC; riepilogoHTML += `<span style="color: #27ae60;">-> Q. Agevolata: ${calcText} ${formatEuro(imponibileRegistroPC)} x 2% = <strong>${formatEuro(impSingolaPC)}</strong></span><br>`; }
-                    if (imm.qOrd > 0) { let impSingolaOrd = imponibileRegistroOrd * 0.09; totaleRegistroProporzionale += impSingolaOrd; riepilogoHTML += `<span style="color: #7f8c8d;">-> Q. Ordinaria: ${calcText} ${formatEuro(imponibileRegistroOrd)} x 9% = <strong>${formatEuro(impSingolaOrd)}</strong></span><br>`; }
+                if (imm.isStrumentale && regimeVenditore === 'registro_impresa') { 
+                    flagStrumentaleDaImpresa = true; imponibileStrumentaliPerIpoCatastale += imm.prezzo; riepilogoHTML += `<strong style="color: #e67e22;">IMMOBILE STRUMENTALE:</strong> Prezzo ${formatEuro(imm.prezzo)}.`; 
+                } else {
+                    if (imm.qAgev > 0) { 
+                        let impSingolaPC = imponibileRegistroPC * 0.02; 
+                        totaleRegistroProporzionale += impSingolaPC; 
+                        let calcStr = usaPrezzoValore ? `IMPOSTA DI REGISTRO = R.C. ${formatNumberStr(imm.rendita)} x 115,50 = V.C. (${labelDir}) ${formatNumberStr(imponibileRegistroPC)} x 2% = <strong>${formatEuro(impSingolaPC)}</strong>` : `IMPOSTA DI REGISTRO = Base Prezzo ${formatEuro(imponibileRegistroPC)} x 2% = <strong>${formatEuro(impSingolaPC)}</strong>`;
+                        riepilogoHTML += `<span style="color: #27ae60;">-> Q. Agevolata (${imm.qAgev}%): ${calcStr}</span><br>`; 
+                    }
+                    if (imm.qOrd > 0) { 
+                        let impSingolaOrd = imponibileRegistroOrd * 0.09; 
+                        totaleRegistroProporzionale += impSingolaOrd; 
+                        let calcStr = usaPrezzoValore ? `IMPOSTA DI REGISTRO = R.C. ${formatNumberStr(imm.rendita)} x ${formatNumberStr(moltOrd)} = V.C. (${labelDir}) ${formatNumberStr(imponibileRegistroOrd)} x 9% = <strong>${formatEuro(impSingolaOrd)}</strong>` : `IMPOSTA DI REGISTRO = Base Prezzo ${formatEuro(imponibileRegistroOrd)} x 9% = <strong>${formatEuro(impSingolaOrd)}</strong>`;
+                        riepilogoHTML += `<span style="color: #7f8c8d;">-> Q. Ordinaria (${imm.qOrd}%): ${calcStr}</span><br>`; 
+                    }
                 }
             } else if (regimeVenditore === 'iva_impresa') {
                 let aliqOrd = (imm.categoria === 'A1' || imm.isStrumentale || imm.isSenzaRendita) ? 0.22 : 0.10;
@@ -403,6 +432,7 @@
             if (creditoDichiarato > 0) { let capienzaMassima = impostaRegistro * (quotaCredito / 100); creditoUtilizzatoOggi = Math.min(creditoDichiarato, capienzaMassima); impostaRegistro -= creditoUtilizzatoOggi; }
             if (regimeVenditore !== 'iva_impresa' && scomputoPreliminare > 0) { preliminareScomputatoOggi = Math.min(scomputoPreliminare, impostaRegistro); impostaRegistro -= preliminareScomputatoOggi; }
             
+            // Correzione Falla Fiscale Voltura 55€ per IVA
             if (regimeVenditore === 'iva_impresa') { 
                 impostaBollo = 230; tassaTrascrizione = 90; tassaVoltura = 55; 
             } else { 
@@ -421,7 +451,6 @@
 
         let defaultPctCV = haPrimaCasa ? "70%" : "100%"; const valArchivioCV = calcolaArchivioMatematico('pubblico', defaultPctCV, window.massaCV);
 
-        let htmlMutuo = ""; window.tasseFisseBaseMutuo = 0;
         if (isMutuoAttivo) {
             let importoMutuo = parseFloat(document.getElementById('importoMutuo').value.replace(/\./g, "").replace(",", ".")) || 0; window.massaMutuo = parseFloat(document.getElementById('importoIpoteca').value.replace(/\./g, "").replace(",", ".")) || 0;
             let isPCMutuo = document.getElementById('tipoMutuo').value === 'pc'; let defaultPctMutuo = isPCMutuo ? "50%" : "100%";
@@ -439,6 +468,7 @@
                 <h3 style="color: #8e44ad; margin-top: 0;">B. PREVENTIVO MUTUO IPOTECARIO</h3>
                 <div style="font-size: 0.9rem; color: #666; margin-bottom: 10px;">Erogato: ${formatEuro(importoMutuo)} | Ipoteca: ${formatEuro(window.massaMutuo)}</div>
                 <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
+                    <tr><td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Iscrizione Ipotecaria</td><td style="text-align: right; color: #555;">€ 35,00</td></tr>
                     ${speseExtraHTMLM}
                     <tr>
                         <td style="padding: 5px 0; padding-left: 10px; color: #555;">- Tassa Archivio Mutuo al: <select id="pctAttoMutuo" onchange="aggiornaTassaArchivioMutuo()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #f4ecf7;"><option value="100%" ${defaultPctMutuo==='100%'?'selected':''}>100%</option><option value="70%" ${defaultPctMutuo==='70%'?'selected':''}>70%</option><option value="50%" ${defaultPctMutuo==='50%'?'selected':''}>50%</option><option value="25%" ${defaultPctMutuo==='25%'?'selected':''}>25%</option></select><select id="tipoAttoMutuo" onchange="aggiornaTassaArchivioMutuo()" style="width: auto; padding: 2px; font-size: 0.8rem; margin-left: 5px; border: 1px solid #ccc; background: #f4ecf7;"><option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option></select></td>
@@ -550,6 +580,8 @@
                 </h2>
                 <div id="dettaglioIva" style="font-size: 0.85rem; color: #bdc3c7; margin-top: 5px;">di cui IVA 22% scorporata: € 0,00</div>
             </div>
+            
+            <div style="font-size: 0.8rem; color: #7f8c8d; margin-top: 5px; text-align: right;">S.E. & O. (Salvo errori ed omissioni)</div>
             
             <div id="riepilogoContabile" style="font-size: 0.65rem; color: #7f8c8d; margin-top: 15px; border-top: 1px dotted #bdc3c7; padding-top: 5px; text-align: left; display: none;">
                 <strong>RIEPILOGO CONTABILE PER FATTURAZIONE:</strong> Imponibile Netto: <span id="cont_netto">€ 0,00</span> | Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | IVA (22%): <span id="cont_iva">€ 0,00</span> | Anticipazioni Esenti (Art. 15): <span id="cont_esenti">€ 0,00</span>
@@ -748,6 +780,7 @@
         if(document.getElementById('valoreTotaleStampa') && document.getElementById('totaleFinaleBox').style.display !== 'none') {
             let isVuoto = document.body.classList.contains('totale-vuoto');
             testo += "GRAN TOTALE COMPLESSIVO: \t" + (isVuoto ? "€ ........................" : document.getElementById('valoreTotaleStampa').innerText) + "\n";
+            testo += "\nS.E. & O. (Salvo errori ed omissioni)\n";
         }
         
         if (document.getElementById('riepilogoContabile') && document.getElementById('riepilogoContabile').style.display === 'block') {
