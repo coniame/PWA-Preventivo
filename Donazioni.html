@@ -7,7 +7,7 @@
     <style>
         /* GRAFICA DELL'APP */
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; color: #333; }
-        .app-container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .app-container { max-width: 750px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         header { text-align: center; border-bottom: 2px solid #8e44ad; padding-bottom: 10px; margin-bottom: 20px; }
         h1 { font-size: 1.5rem; color: #8e44ad; margin: 0; }
         h2 { font-size: 1rem; color: #7f8c8d; margin: 5px 0 0 0; }
@@ -16,7 +16,7 @@
         label { font-weight: bold; font-size: 0.9rem; color: #2c3e50; display: block; margin-top: 10px; }
         select, input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #bdc3c7; border-radius: 6px; font-size: 1rem; box-sizing: border-box; background: #fdfdfd; transition: all 0.3s; }
         select:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus { border-color: #9b59b6; outline: none; box-shadow: 0 0 5px rgba(155, 89, 182, 0.3); }
-        input:disabled { background: #e0e0e0; color: #7f8c8d; cursor: not-allowed; border-color: #bdc3c7; }
+        input:disabled, select:disabled { background: #e0e0e0; color: #7f8c8d; cursor: not-allowed; border-color: #bdc3c7; }
         input[type="checkbox"]:disabled { cursor: not-allowed; }
         
         button { background: #8e44ad; color: white; border: none; padding: 12px 15px; border-radius: 6px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 15px; }
@@ -32,7 +32,7 @@
         .blocco-immobile { border: 2px solid #ecf0f1; padding: 15px; margin-bottom: 15px; background: #fafafa; border-radius: 8px; }
         .blocco-denaro { border: 2px solid #f1c40f; padding: 15px; margin-bottom: 15px; background: #fef9e7; border-radius: 8px; }
         .blocco-azienda { border: 2px solid #34495e; padding: 15px; margin-bottom: 15px; background: #ebedef; border-radius: 8px; }
-        .blocco-pregressa { border: 2px dashed #e74c3c; padding: 10px; margin-bottom: 10px; background: #fadbd8; border-radius: 8px; }
+        .blocco-pregressa { border: 2px dashed #e74c3c; padding: 15px; margin-bottom: 10px; background: #fadbd8; border-radius: 8px; }
         
         .box-guida { background: #e3f2fd; border-left: 4px solid #3498db; padding: 10px; margin-top: 15px; margin-bottom: 5px; font-size: 0.85rem; color: #2c3e50; border-radius: 0 6px 6px 0; line-height: 1.4; }
         .box-guida strong { color: #2980b9; }
@@ -53,9 +53,9 @@
         
         @media print {
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            .app-container { box-shadow: none; border: none; padding: 0; }
+            .app-container { box-shadow: none; border: none; padding: 0; max-width: 100%; }
             button, .btn-home { display: none !important; }
-            input[type="text"], input[type="date"], input[type="number"] { border: none !important; background: transparent !important; padding: 0 !important; }
+            input[type="text"], input[type="date"], input[type="number"], select { border: none !important; background: transparent !important; padding: 0 !important; -webkit-appearance: none; appearance: none;}
             .box-guida, .tooltip, .box-help-parentela, .avviso-legale { display: none !important; } 
             #tipoAttoCV, #boxScontoInput { display: none !important; }
             
@@ -91,12 +91,12 @@
         </div>
         
         <div class="avviso-legale">
-            ✅ <strong>Multi-Beneficiario:</strong> Il calcolatore supporta donazioni a più beneficiari. Il sistema calcolerà franchigie separate per ogni ricevente, applicando i costi fissi notarili (Bollo, Trascrizione) una sola volta sull'intero atto.
+            ✅ <strong>Multi-Beneficiario:</strong> Il calcolatore supporta donazioni a più beneficiari. Il sistema calcolerà franchigie separate per ogni ricevente.
         </div>
 
         <div class="toggle-container">
             <input type="checkbox" id="checkHandicap" autocomplete="off">
-            <label for="checkHandicap">Presenza di un Beneficiario con Handicap Grave (L. 104)</label>
+            <label for="checkHandicap">Beneficiario con Handicap Grave (L. 104)</label>
             <div style="font-size: 0.8rem; margin-top: 5px; color: #666; margin-left: 25px;">Questa spunta eleva la franchigia a 1.500.000 € in sede di calcolo imposte.</div>
         </div>
 
@@ -121,7 +121,7 @@
         </div>
 
         <div class="box-guida">
-            💡 <strong>Istruzioni:</strong> Aggiungi i beni. Specifica la categoria esatta. Il programma bloccherà automaticamente il calcolo se tenti di assegnare la "Prima Casa" a due pertinenze della stessa categoria. <strong>Le categorie F (Senza Rendita) vanno valorizzate manualmente.</strong>
+            💡 <strong>Istruzioni Conservatoria:</strong> Inserisci il nome esatto della Conservatoria (es. Napoli 1, Napoli 2). Il programma conterà gli uffici univoci per addebitare correttamente le tasse fisse di trascrizione e voltura.
         </div>
         
         <div id="contenitoreBeni"></div>
@@ -134,17 +134,21 @@
 
         <div style="border-top: 2px solid #e74c3c; margin-top: 25px; padding-top: 15px;">
             <h4 style="color: #c0392b; margin-top: 0;">Coacervo: Donazioni Pregresse</h4>
-            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">Inserisci eventuali donazioni passate per calcolare l'erosione della franchigia.</div>
+            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">Inserisci donazioni passate per calcolare l'erosione della franchigia. <strong style="color: #c0392b;">Attenzione alle date normative.</strong></div>
             <div id="contenitorePregresse"></div>
             <button type="button" class="secondary" onclick="aggiungiPregressa()" style="padding: 8px; font-size: 0.9rem; background: #e74c3c;">+ Aggiungi Donazione Pregressa</button>
         </div>
 
         <div style="border-top: 2px solid #ecf0f1; margin-top: 20px; padding-top: 15px;">
-            <label>Spese vive per la pratica (es. Visure, APE):</label>
+            <label>Spese extra (Visure, Service, etc.):</label>
             <div id="contenitoreSpeseExtra">
-                <div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" class="nome-spesa" value="Spese Visure Ipotecarie e Catastali" style="flex: 2;" autocomplete="off">
-                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+                <div class="riga-spesa" style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <input type="text" class="nome-spesa" value="Spese Visure Ipotecarie e Catastali" style="flex: 2; min-width: 200px;" autocomplete="off">
+                    <select class="regime-spesa" style="flex: 1.5; min-width: 150px;">
+                        <option value="esente">Esente (Art. 15)</option>
+                        <option value="imponibile">Imponibile (+ IVA 22%)</option>
+                    </select>
+                    <input type="text" class="importo-spesa input-valuta" value="100,00" style="flex: 1; text-align: right; min-width: 100px;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
                 </div>
             </div>
             <button type="button" class="secondary" onclick="aggiungiSpesaExtra()" style="padding: 8px; font-size: 0.9rem;">+ Aggiungi altra spesa</button>
@@ -175,6 +179,10 @@
 
     let scontoCorrenteEuro = 0;
     let baseTassePerSconto = 0;
+    let baseImponibileSpese = 0;
+    let onorarioConsigliatoRepertorio = 0;
+    let contatoreBeni = 0;
+    let ultimaDataNascitaInserita = ""; 
 
     window.onload = function() {
         const impiegatoSalvato = localStorage.getItem('nomeImpiegatoPWA');
@@ -223,14 +231,47 @@
     function gestisciDiritto(selectElement) {
         const blocco = selectElement.closest('.item-donazione');
         const boxEta = blocco.querySelector('.box-eta');
-        if (selectElement.value === 'piena') {
+        const isRiserva = blocco.querySelector('.check-riserva') ? blocco.querySelector('.check-riserva').checked : false;
+
+        if (selectElement.value === 'piena' && !isRiserva) {
             boxEta.style.display = 'none';
             blocco.querySelector('.perc-diritto').value = 100;
         } else {
             boxEta.style.display = 'block';
+            let labelEta = blocco.querySelector('.label-eta-dinamica');
+            if (labelEta) labelEta.innerText = isRiserva ? "Data di Nascita Donante (Usufruttuario):" : "Data di Nascita Usufruttuario:";
             calcolaPercentualeDaEta(blocco.querySelector('.input-eta'));
         }
         calcolaValoreCatastale(selectElement);
+    }
+
+    function gestisciRiservaUsufrutto(checkElement) {
+        const blocco = checkElement.closest('.item-donazione');
+        const selectDiritto = blocco.querySelector('.diritto-donato');
+        
+        if (checkElement.checked) {
+            selectDiritto.value = 'nuda';
+            selectDiritto.disabled = true;
+        } else {
+            selectDiritto.disabled = false;
+        }
+        gestisciDiritto(selectDiritto);
+    }
+
+    function calcolaEtaDaData(inputData) {
+        const blocco = inputData.closest('.item-donazione');
+        const inputEta = blocco.querySelector('.input-eta');
+        
+        if(inputData.value) {
+            ultimaDataNascitaInserita = inputData.value;
+            const oggi = new Date();
+            const dataNascita = new Date(inputData.value);
+            let eta = oggi.getFullYear() - dataNascita.getFullYear();
+            const m = oggi.getMonth() - dataNascita.getMonth();
+            if (m < 0 || (m === 0 && oggi.getDate() < dataNascita.getDate())) { eta--; }
+            inputEta.value = eta;
+            calcolaPercentualeDaEta(inputEta);
+        }
     }
 
     function calcolaPercentualeDaEta(inputEta) {
@@ -273,11 +314,7 @@
         const inputRendita = blocco.querySelector('.rendita-catastale');
         const inputValoreFiscale = blocco.querySelector('.valore-bene');
         const selectCat = blocco.querySelector('.cat-catastale-donazione');
-        let categoria = selectCat.value;
         
-        // Se è categoria F, il calcolo da rendita viene bypassato (inserimento manuale)
-        if (categoria.startsWith('F')) return;
-
         const qNum = parseFloat(blocco.querySelector('.quota-num').value) || 1;
         const qDen = parseFloat(blocco.querySelector('.quota-den').value) || 1;
         const percDiritto = parseFloat(blocco.querySelector('.perc-diritto').value) || 100;
@@ -288,12 +325,13 @@
         if (rendita === 0) return;
 
         let moltiplicatore = 126; 
+        let categoria = selectCat.value;
 
-        // Gestione PPC vs Prima Casa
         let checkPC = blocco.querySelector('.check-primacasa');
-        let isPC = checkPC && checkPC.checked;
-
-        if (isPC) { moltiplicatore = 115.5; } 
+        let checkStorico = blocco.querySelector('.check-storico');
+        
+        if (checkPC && checkPC.checked) { moltiplicatore = 115.5; } 
+        else if (checkStorico && checkStorico.checked) { moltiplicatore = 126; }
         else if (categoria === 'A10') { moltiplicatore = 63; } 
         else if (categoria === 'C1' || categoria === 'C3') { moltiplicatore = 42.84; } 
         else if (categoria === 'TERRENO') { moltiplicatore = 112.5; }
@@ -309,68 +347,58 @@
         if(inputComm) { inputComm.value = valFormattato; }
     }
 
-    function gestisciAgevolazioniDonazione(selectElement, idIndex) {
-        const categoria = selectElement.value;
-        const blocco = selectElement.closest('.blocco-immobile');
+    function gestisciAgevolazioniDonazione(checkOrSelectElement) {
+        const blocco = checkOrSelectElement.closest('.blocco-immobile');
+        const categoria = blocco.querySelector('.cat-catastale-donazione').value;
         
-        const boxPC = blocco.querySelector('.box-agevolazione-pc');
         const checkPC = blocco.querySelector('.check-primacasa');
-        
-        const boxPPC = blocco.querySelector('.box-agevolazione-ppc');
         const checkPPC = blocco.querySelector('.check-ppc');
+        const checkStorico = blocco.querySelector('.check-storico');
 
-        if(checkPC) { checkPC.checked = false; checkPC.disabled = true; }
-        if(boxPC) { boxPC.style.display = 'none'; }
-        if(checkPPC) { checkPPC.checked = false; checkPPC.disabled = true; }
-        if(boxPPC) { boxPPC.style.display = 'none'; }
+        if(checkOrSelectElement === checkPC && checkPC.checked) { checkPPC.checked = false; checkStorico.checked = false; }
+        if(checkOrSelectElement === checkPPC && checkPPC.checked) { checkPC.checked = false; checkStorico.checked = false; }
+        if(checkOrSelectElement === checkStorico && checkStorico.checked) { checkPC.checked = false; checkPPC.checked = false; }
 
         if (categoria === 'TERRENO') {
-            if(checkPPC) checkPPC.disabled = false; 
-            if(boxPPC) boxPPC.style.display = 'block';
-        } else if (categoria === 'A1' || categoria === 'C1' || categoria === 'A10' || categoria === 'C3' || categoria.startsWith('F')) {
-            // Nessuna agevolazione permessa
+            checkPPC.disabled = false; blocco.querySelector('.box-agevolazione-ppc').style.display = 'block';
+            checkPC.checked = false; checkPC.disabled = true; blocco.querySelector('.box-agevolazione-pc').style.display = 'none';
+            checkStorico.checked = false; checkStorico.disabled = true; blocco.querySelector('.box-agevolazione-storico').style.display = 'none';
+        } else if (categoria === 'A1' || categoria === 'C1' || categoria === 'A10' || categoria === 'C3') {
+            checkPPC.checked = false; checkPPC.disabled = true; blocco.querySelector('.box-agevolazione-ppc').style.display = 'none';
+            checkPC.checked = false; checkPC.disabled = true; blocco.querySelector('.box-agevolazione-pc').style.display = 'none';
+            checkStorico.disabled = false; blocco.querySelector('.box-agevolazione-storico').style.display = 'block';
         } else {
-            if(checkPC) checkPC.disabled = false; 
-            if(boxPC) boxPPC.style.display = 'block';
+            checkPPC.checked = false; checkPPC.disabled = true; blocco.querySelector('.box-agevolazione-ppc').style.display = 'none';
+            checkPC.disabled = false; blocco.querySelector('.box-agevolazione-pc').style.display = 'block';
+            checkStorico.disabled = false; blocco.querySelector('.box-agevolazione-storico').style.display = 'block';
         }
-
-        const inputRendita = blocco.querySelector('.rendita-catastale');
-        if (categoria.startsWith('F')) {
-            if(inputRendita) {
-                inputRendita.disabled = true;
-                inputRendita.value = "";
-                inputRendita.placeholder = "Inserire valori a mano";
-                inputRendita.style.background = "#eeeeee";
-            }
-        } else {
-            if(inputRendita) {
-                inputRendita.disabled = false;
-                inputRendita.placeholder = "es. 500,00";
-                inputRendita.style.background = "#fdfdfd";
-            }
-        }
-        
-        calcolaValoreCatastale(selectElement);
+        calcolaValoreCatastale(checkOrSelectElement);
     }
-
-    let contatoreBeni = 0;
     
     function aggiungiImmobile() {
         contatoreBeni++;
         const c = document.getElementById('contenitoreBeni');
         const b = document.createElement('div');
         b.className = 'blocco-immobile item-donazione';
+        
         b.innerHTML = `
             <h4 style="margin-top: 0; color: #2c3e50;">Immobile #${contatoreBeni} <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X</button></h4>
             
             <div style="background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                 <input type="checkbox" class="check-comunione" id="comunione_${contatoreBeni}" autocomplete="off">
-                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Bene Cointestato a 2 Donanti (con lo STESSO grado di parentela verso chi riceve)</label>
-                <div style="font-size: 0.75rem; color: #666; margin-top: 3px; margin-left: 25px;">Il valore verrà diviso a metà su due donanti, raddoppiando l'esenzione disponibile. <strong>NON USARE se i donanti hanno gradi di parentela diversi (es. Padre e Zio).</strong></div>
+                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Bene Cointestato a 2 Donanti (con lo STESSO grado di parentela)</label>
             </div>
 
-            <label style="color: #2980b9;">Nome Beneficiario (A chi è donato?):</label>
-            <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="border-color: #3498db; background: #ebf5fb; font-weight: bold;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 200px;">
+                    <label style="color: #2980b9;">Beneficiario (A chi è donato?):</label>
+                    <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="border-color: #3498db; background: #ebf5fb; font-weight: bold;">
+                </div>
+                <div style="flex: 1.5; min-width: 200px;">
+                    <label style="color: #c0392b;">Conservatoria (es. Napoli 1):</label>
+                    <input type="text" class="provincia-bene" placeholder="es. Napoli 1" style="border-color: #c0392b; text-transform: uppercase;">
+                </div>
+            </div>
 
             <label style="color: #8e44ad; margin-top: 15px;">Grado di Parentela (Da chi proviene questo immobile?):</label>
             <select class="tipo-parentela-bene" autocomplete="off" style="border-color: #8e44ad; background: #f4ecf7;">
@@ -380,7 +408,12 @@
                 <option value="estranei">4. Estranei o parenti oltre 4° grado - No Franchigia</option>
             </select>
 
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <div style="background: #fef9e7; border: 1px dashed #f39c12; padding: 10px; border-radius: 6px; margin-top: 15px;">
+                <input type="checkbox" class="check-riserva" id="riserva_${contatoreBeni}" autocomplete="off" onchange="gestisciRiservaUsufrutto(this)">
+                <label for="riserva_${contatoreBeni}" style="color: #d35400; display: inline; font-size: 0.95rem;">Il Donante si riserva l'Usufrutto (Dona solo Nuda Proprietà)</label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <div style="flex: 1;">
                     <label>Quota Donata:</label>
                     <div style="display: flex; align-items: center; gap: 5px;">
@@ -390,7 +423,7 @@
                     </div>
                 </div>
                 <div style="flex: 2;">
-                    <label>Diritto Donato:</label>
+                    <label>Diritto per il Beneficiario:</label>
                     <select class="diritto-donato" onchange="gestisciDiritto(this)">
                         <option value="piena" selected>Piena Proprietà</option>
                         <option value="nuda">Nuda Proprietà</option>
@@ -400,60 +433,71 @@
             </div>
             
             <div class="box-eta" style="display: none; background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; margin-top: 10px; border-radius: 6px;">
-                <label style="margin-top: 0; color: #16a085;">Età Usufruttuario:</label>
-                <input type="number" class="input-eta" placeholder="Es. 70" oninput="calcolaPercentualeDaEta(this)" style="width: 100px; display: inline-block;">
-                <span style="font-size: 0.85rem; margin-left: 10px;">Valore Diritto applicato: </span>
-                <input type="number" class="perc-diritto" value="100" oninput="calcolaValoreCatastale(this)" style="width: 60px; display: inline-block; text-align: right; border: 1px dashed #16a085;"> <strong>%</strong>
+                <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                    <div>
+                        <label class="label-eta-dinamica" style="margin-top: 0; color: #16a085; font-size: 0.85rem;">Data di Nascita Usufruttuario:</label>
+                        <input type="date" class="input-data-nascita" value="${ultimaDataNascitaInserita}" onchange="calcolaEtaDaData(this)" style="width: 150px; display: block; padding: 8px;">
+                    </div>
+                    <div>
+                        <label style="margin-top: 0; color: #16a085; font-size: 0.85rem;">Età (anni):</label>
+                        <input type="number" class="input-eta" placeholder="Es. 70" oninput="calcolaPercentualeDaEta(this)" style="width: 80px; display: block; padding: 8px;">
+                    </div>
+                    <div style="flex-grow: 1; text-align: right; padding-bottom: 5px;">
+                        <span style="font-size: 0.85rem;">Valore Diritto applicato: </span>
+                        <input type="number" class="perc-diritto" value="100" oninput="calcolaValoreCatastale(this)" style="width: 60px; display: inline-block; text-align: right; border: 1px dashed #16a085; padding: 8px;"> <strong>%</strong>
+                    </div>
+                </div>
             </div>
 
             <label style="margin-top: 15px;">Categoria Catastale dell'Immobile:</label>
-            <select class="cat-catastale-donazione" onchange="gestisciAgevolazioniDonazione(this, ${contatoreBeni})">
+            <select class="cat-catastale-donazione" onchange="gestisciAgevolazioniDonazione(this)">
                 <optgroup label="Abitativi e Pertinenze">
-                    <option value="A2" selected>Abitazione (A/2, A/3, A/4, A/5, A/6, A/7, A/11)</option>
-                    <option value="C2">C/2 (Cantina, Soffitta, Magazzino)</option>
-                    <option value="C6">C/6 (Box, Garage, Posto Auto)</option>
+                    <option value="A2" selected>Abitazione (A/2, A/3...)</option>
+                    <option value="C2">C/2 (Cantina, Soffitta)</option>
+                    <option value="C6">C/6 (Box, Garage)</option>
                     <option value="C7">C/7 (Tettoia aperta)</option>
                 </optgroup>
                 <optgroup label="Immobili NON Agevolabili o Speciali">
-                    <option value="A1">A/1, A/8, A/9 (Abitazioni di Lusso)</option>
-                    <option value="C1">C/1 (Negozio / Commerciale)</option>
+                    <option value="A1">A/1, A/8, A/9 (Lusso)</option>
+                    <option value="C1">C/1 (Negozio)</option>
                     <option value="A10">A/10 (Ufficio)</option>
-                    <option value="C3">C/3, D/1, D/8... (Artigianali)</option>
+                    <option value="C3">C/3, D/1... (Artigianali/Industriali)</option>
                     <option value="TERRENO">Terreno (Agricolo/Edificabile)</option>
-                </optgroup>
-                <optgroup label="Senza Rendita (Categorie F)">
-                    <option value="F3">F/3 - Fabbricato in corso di costruzione</option>
-                    <option value="F4">F/4 - Fabbricato in corso di definizione</option>
-                    <option value="F5">F/5 - Lastrico Solare</option>
                 </optgroup>
             </select>
 
             <label style="margin-top: 15px;">Descrizione / Indirizzo:</label>
             <input type="text" class="descrizione-bene" placeholder="es. Immobile in Via Roma" autocomplete="off">
             
-            <label style="margin-top: 15px; color: #16a085;">Rendita Catastale Intera / Reddito Dominicale intero (€):</label>
+            <label style="margin-top: 15px; color: #16a085;">Rendita Catastale Intera / Reddito Dominicale (€):</label>
             <input type="text" class="rendita-catastale input-valuta" placeholder="es. 500,00" style="text-align: right; border-color: #1abc9c;" autocomplete="off" oninput="formattaValuta(this); calcolaValoreCatastale(this)" onblur="formattaDecimale(this)">
 
-            <label style="margin-top: 15px;">Valore Fiscale/Catastale per la Quota/Diritto (€): <span class="tooltip" title="Calcolato dalla rendita per le abitazioni, da inserire manualmente per i beni categoria F. Serve per il calcolo delle imposte allo Stato.">i</span></label>
-            <input type="text" class="valore-bene input-valuta" placeholder="es. 150.000,00" style="text-align: right; font-weight: bold; color: #2c3e50; background: #eaf2f8;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <label style="margin-top: 15px;">Valore Fiscale/Catastale della Quota/Diritto (€):</label>
+            <input type="text" class="valore-bene input-valuta" style="text-align: right; font-weight: bold; color: #2c3e50; background: #eaf2f8;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
             
-            <label style="margin-top: 15px; color: #d35400;">Valore Commerciale Reale Dichiarato (€): <span class="tooltip" title="Valore di mercato per la registrazione a Repertorio e il calcolo della Tassa d'Archivio/Onorario. Viene precompilato, sovrascrivilo se l'immobile vale di più.">i</span></label>
-            <input type="text" class="valore-commerciale input-valuta" placeholder="es. 150.000,00" style="text-align: right; font-weight: bold; color: #d35400; background: #fdf2e9; border-color: #e67e22;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <label style="margin-top: 15px; color: #d35400;">Valore Commerciale Reale (€): <span class="tooltip" title="Valore di mercato per Repertorio/Onorario.">i</span></label>
+            <input type="text" class="valore-commerciale input-valuta" style="text-align: right; font-weight: bold; color: #d35400; background: #fdf2e9; border-color: #e67e22;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
 
-            <div class="toggle-container box-agevolazione-pc" style="background: #e8f4f8; border-color: #3498db; margin-top: 10px; padding: 10px;">
-                <input type="checkbox" class="check-primacasa" id="pc_${contatoreBeni}" autocomplete="off" onchange="calcolaValoreCatastale(this)">
-                <label for="pc_${contatoreBeni}" style="color: #2980b9; font-size: 0.9rem;">Richiesta Agevolazione Prima Casa</label>
-                <div style="font-size: 0.75rem; color: #666; margin-left: 25px; margin-top: 3px;">Fissa Ipotecaria e Catastale a 200€ ciascuna. Al massimo una per categoria.</div>
-            </div>
-
-            <div class="toggle-container box-agevolazione-ppc" style="display: none; background: #e8f8f5; border-color: #27ae60; margin-top: 10px; padding: 10px;">
-                <input type="checkbox" class="check-ppc" id="ppc_${contatoreBeni}" autocomplete="off" onchange="calcolaValoreCatastale(this)">
-                <label for="ppc_${contatoreBeni}" style="color: #27ae60; font-size: 0.9rem;">Agevolazione P.P.C. (Agricoltori/IAP)</label>
-                <div style="font-size: 0.75rem; color: #666; margin-left: 25px; margin-top: 3px;">Esenzione totale Imposta Donazione. Ipotecaria fissa 200€, Catastale 1%.</div>
+            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                <div class="toggle-container box-agevolazione-pc" style="flex:1; background: #e8f4f8; border-color: #3498db; margin-top:0; padding: 10px;">
+                    <input type="checkbox" class="check-primacasa" id="pc_${contatoreBeni}" autocomplete="off" onchange="gestisciAgevolazioniDonazione(this)">
+                    <label for="pc_${contatoreBeni}" style="color: #2980b9; font-size: 0.85rem;">Prima Casa</label>
+                </div>
+                <div class="toggle-container box-agevolazione-storico" style="flex:1; background: #f4ecf7; border-color: #9b59b6; margin-top:0; padding: 10px;">
+                    <input type="checkbox" class="check-storico" id="storico_${contatoreBeni}" autocomplete="off" onchange="gestisciAgevolazioniDonazione(this)">
+                    <label for="storico_${contatoreBeni}" style="color: #8e44ad; font-size: 0.85rem;">Beni Storici (Art. 13)</label>
+                </div>
+                <div class="toggle-container box-agevolazione-ppc" style="display: none; flex:1; background: #e8f8f5; border-color: #27ae60; margin-top:0; padding: 10px;">
+                    <input type="checkbox" class="check-ppc" id="ppc_${contatoreBeni}" autocomplete="off" onchange="gestisciAgevolazioniDonazione(this)">
+                    <label for="ppc_${contatoreBeni}" style="color: #27ae60; font-size: 0.85rem;">P.P.C. (Agricoltura)</label>
+                </div>
             </div>
         `;
         c.appendChild(b);
-        gestisciAgevolazioniDonazione(b.querySelector('.cat-catastale-donazione'), contatoreBeni);
+        
+        let dateInput = b.querySelector('.input-data-nascita');
+        if (dateInput && dateInput.value) { calcolaEtaDaData(dateInput); }
+        gestisciAgevolazioniDonazione(b.querySelector('.cat-catastale-donazione'));
     }
 
     function aggiungiDenaro() {
@@ -463,28 +507,22 @@
         b.className = 'blocco-denaro item-donazione';
         b.innerHTML = `
             <h4 style="margin-top: 0; color: #b9770e;">Denaro / Titoli / Mobili <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X</button></h4>
-            
             <div style="background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                 <input type="checkbox" class="check-indiretta" id="indiretta_${contatoreBeni}" autocomplete="off">
-                <label for="indiretta_${contatoreBeni}" style="color: #16a085; display: inline;">Donazione Indiretta (Finalizzata acquisto immobile)</label>
-                <div style="font-size: 0.75rem; color: #666; margin-top: 3px; margin-left: 25px;">Il denaro sarà esentato dalle Imposte e non eroderà la franchigia. Verrà calcolato solo per il Repertorio.</div>
+                <label for="indiretta_${contatoreBeni}" style="color: #16a085; display: inline;">Donazione Indiretta (Esente per acquisto casa)</label>
             </div>
-
-            <label style="color: #2980b9;">Nome Beneficiario (A chi è donato?):</label>
+            <label style="color: #2980b9;">Beneficiario (A chi è donato?):</label>
             <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="border-color: #3498db; background: #ebf5fb; font-weight: bold;">
-
-            <label style="color: #8e44ad; margin-top: 15px;">Grado di Parentela (Da chi provengono i soldi?):</label>
+            <label style="color: #8e44ad; margin-top: 15px;">Grado di Parentela (Da chi proviene?):</label>
             <select class="tipo-parentela-bene" autocomplete="off" style="border-color: #8e44ad; background: #f4ecf7;">
-                <option value="coniuge_retta">1. Coniuge o Linea Retta - Franchigia 1 Milione</option>
-                <option value="fratelli">2. Fratelli e Sorelle - Franchigia 100.000 €</option>
-                <option value="parenti_4">3. Parenti fino al 4° / Affini fino 3° - No Franchigia</option>
-                <option value="estranei">4. Estranei o parenti oltre 4° - No Franchigia</option>
+                <option value="coniuge_retta">1. Coniuge o Linea Retta</option>
+                <option value="fratelli">2. Fratelli e Sorelle</option>
+                <option value="parenti_4">3. Parenti fino al 4°</option>
+                <option value="estranei">4. Estranei</option>
             </select>
-
             <label style="margin-top: 15px;">Descrizione del bene:</label>
             <input type="text" class="descrizione-bene" value="Bonifico Bancario" autocomplete="off">
-            
-            <label style="margin-top: 15px;">Importo Nominale Donato (€):</label>
+            <label style="margin-top: 15px;">Importo (€):</label>
             <input type="text" class="valore-bene input-valuta" placeholder="es. 50.000,00" style="text-align: right; font-weight: bold; color: #b9770e;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         c.appendChild(b);
@@ -496,24 +534,17 @@
         const b = document.createElement('div');
         b.className = 'blocco-azienda item-donazione';
         b.innerHTML = `
-            <h4 style="margin-top: 0; color: #2c3e50;">Azienda / Quote Societarie #${contatoreBeni} <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X</button></h4>
-            <div class="avviso-legale" style="background: #e8f8f5; border-color: #1abc9c; color: #16a085; margin-bottom: 15px;">
-                ✅ <strong>Esenzione Art. 3, c. 4-ter TUS:</strong> Questo bene non eroderà la franchigia e non produrrà imposte di donazione.
-            </div>
-
+            <h4 style="margin-top: 0; color: #2c3e50;">Azienda / Quote Societarie <button type="button" class="danger" onclick="this.parentElement.parentElement.remove()">X</button></h4>
             <div style="background: #e8f8f5; border: 1px solid #1abc9c; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
                 <input type="checkbox" class="check-comunione" id="comunione_${contatoreBeni}" autocomplete="off">
-                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Quote Cointestate a 2 Donanti (con lo STESSO grado di parentela verso chi riceve)</label>
+                <label for="comunione_${contatoreBeni}" style="color: #16a085; display: inline;">Quote Cointestate a 2 Donanti</label>
             </div>
-            
-            <label style="color: #2980b9;">Nome Beneficiario (A chi sono donate?):</label>
+            <label style="color: #2980b9;">Beneficiario:</label>
             <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="border-color: #3498db; background: #ebf5fb; font-weight: bold;">
-
-            <label style="margin-top: 15px;">Descrizione (es. 100% Quote S.r.l. Alpha):</label>
-            <input type="text" class="descrizione-bene" placeholder="es. Intera Azienda Commerciale" autocomplete="off">
-            
-            <label style="margin-top: 15px; color: #d35400;">Valore Commerciale Reale (€): <span class="tooltip" title="Ai soli fini della Repertoriazione e dell'Onorario">i</span></label>
-            <input type="text" class="valore-commerciale input-valuta" placeholder="es. 500.000,00" style="text-align: right; font-weight: bold; color: #d35400; background: #fdf2e9; border-color: #e67e22;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
+            <label style="margin-top: 15px;">Descrizione:</label>
+            <input type="text" class="descrizione-bene" placeholder="es. 100% Quote S.r.l. Alpha" autocomplete="off">
+            <label style="margin-top: 15px; color: #d35400;">Valore Commerciale Reale (€):</label>
+            <input type="text" class="valore-commerciale input-valuta" style="text-align: right; font-weight: bold; color: #d35400; background: #fdf2e9; border-color: #e67e22;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)">
         `;
         c.appendChild(b);
     }
@@ -523,9 +554,18 @@
         const b = document.createElement('div');
         b.className = 'blocco-pregressa riga-pregressa';
         b.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
-                <label style="font-size: 0.8rem; color: #c0392b; width: 40%;">A quale Beneficiario?</label>
-                <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="flex: 1; padding: 5px; font-size: 0.9rem;">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 0.8rem; color: #c0392b; margin-top:0;">Beneficiario:</label>
+                    <input type="text" class="nome-beneficiario" value="Beneficiario 1" autocomplete="off" style="padding: 5px; font-size: 0.9rem;">
+                </div>
+                <div style="flex: 2; min-width: 200px;">
+                    <label style="font-size: 0.8rem; color: #c0392b; margin-top:0;">Normativa (Data Donazione):</label>
+                    <select class="periodo-pregressa" style="padding: 5px; font-size: 0.85rem;">
+                        <option value="rilevante">Prima del 25/10/2001 o Dopo il 28/11/2006 (ERODE FRANCHIGIA)</option>
+                        <option value="esente">Tra il 25/10/2001 e il 28/11/2006 (ESENTE COACERVO)</option>
+                    </select>
+                </div>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
                 <select class="parentela-pregressa" style="flex: 2; margin-top: 0; padding: 8px;">
@@ -542,22 +582,17 @@
     function aggiungiSpesaExtra() {
         const c = document.getElementById('contenitoreSpeseExtra');
         const r = document.createElement('div');
-        r.className = 'riga-spesa'; r.style = "display: flex; gap: 10px; margin-bottom: 10px;";
-        r.innerHTML = `<input type="text" class="nome-spesa" placeholder="Descrizione spesa" style="flex: 2;" autocomplete="off"><input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>`;
+        r.className = 'riga-spesa'; r.style = "display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;";
+        r.innerHTML = `<input type="text" class="nome-spesa" placeholder="Descrizione" style="flex: 2; min-width: 200px;" autocomplete="off"><select class="regime-spesa" style="flex: 1.5; min-width: 150px;"><option value="esente">Esente (Art. 15)</option><option value="imponibile">Imponibile (+ IVA 22%)</option></select><input type="text" class="importo-spesa input-valuta" placeholder="0,00" style="flex: 1; text-align: right; min-width: 100px;" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this)"><button type="button" class="danger" onclick="this.parentElement.remove()" style="margin-top: 5px;">X</button>`;
         c.appendChild(r);
     }
 
     function cambiaTipoAtto(selectElement, idInput, valPubblico, valPrivato, baseTasseTotali) {
         const inputArchivio = document.getElementById(idInput);
-        if (selectElement.value === 'privato') {
-            inputArchivio.value = formatNumberStr(valPrivato);
-        } else {
-            inputArchivio.value = formatNumberStr(valPubblico);
-        }
+        inputArchivio.value = selectElement.value === 'privato' ? formatNumberStr(valPrivato) : formatNumberStr(valPubblico);
         aggiornaTotaliDinamici(baseTasseTotali);
     }
 
-    // --- SALVATAGGIO BOZZA E RIPRISTINO ---
     function esportaBozza() {
         let bozza = {
             tipoSoftware: 'StudioNotarileBozza', tipoAtto: 'donazione',
@@ -577,11 +612,14 @@
                 comunione: b.querySelector('.check-comunione') ? b.querySelector('.check-comunione').checked : false,
                 indiretta: b.querySelector('.check-indiretta') ? b.querySelector('.check-indiretta').checked : false,
                 beneficiario: b.querySelector('.nome-beneficiario') ? b.querySelector('.nome-beneficiario').value : '',
+                provincia: isImmobile && b.querySelector('.provincia-bene') ? b.querySelector('.provincia-bene').value : '',
                 parentela: b.querySelector('.tipo-parentela-bene') ? b.querySelector('.tipo-parentela-bene').value : 'coniuge_retta',
+                riserva: isImmobile && b.querySelector('.check-riserva') ? b.querySelector('.check-riserva').checked : false,
                 cat: isImmobile ? b.querySelector('.cat-catastale-donazione').value : null,
                 quotaNum: isImmobile ? b.querySelector('.quota-num').value : 1,
                 quotaDen: isImmobile ? b.querySelector('.quota-den').value : 1,
                 diritto: isImmobile ? b.querySelector('.diritto-donato').value : 'piena',
+                dataNascita: isImmobile && b.querySelector('.input-data-nascita') ? b.querySelector('.input-data-nascita').value : '',
                 eta: isImmobile && b.querySelector('.input-eta') ? b.querySelector('.input-eta').value : '',
                 percDiritto: isImmobile ? b.querySelector('.perc-diritto').value : 100,
                 descrizione: b.querySelector('.descrizione-bene').value,
@@ -589,6 +627,7 @@
                 valoreFiscale: isAzienda ? 0 : b.querySelector('.valore-bene').value,
                 valoreCommerciale: isAzienda ? b.querySelector('.valore-commerciale').value : (b.querySelector('.valore-commerciale') ? b.querySelector('.valore-commerciale').value : b.querySelector('.valore-bene').value),
                 primaCasa: isImmobile ? b.querySelector('.check-primacasa').checked : false,
+                isStorico: isImmobile && b.querySelector('.check-storico') ? b.querySelector('.check-storico').checked : false,
                 isPPC: isImmobile && b.querySelector('.check-ppc') ? b.querySelector('.check-ppc').checked : false
             });
         });
@@ -596,13 +635,14 @@
         document.querySelectorAll('.riga-pregressa').forEach(p => {
             bozza.pregresse.push({
                 beneficiario: p.querySelector('.nome-beneficiario').value,
+                periodo: p.querySelector('.periodo-pregressa').value,
                 parentela: p.querySelector('.parentela-pregressa').value,
                 valore: p.querySelector('.valore-pregressa').value
             });
         });
 
         document.querySelectorAll('.riga-spesa').forEach(s => {
-            bozza.spese.push({ nome: s.querySelector('.nome-spesa').value, importo: s.querySelector('.importo-spesa').value });
+            bozza.spese.push({ nome: s.querySelector('.nome-spesa').value, regime: s.querySelector('.regime-spesa').value, importo: s.querySelector('.importo-spesa').value });
         });
 
         let dataStr = JSON.stringify(bozza, null, 2); let blob = new Blob([dataStr], { type: "application/json" }); 
@@ -630,13 +670,30 @@
                                 let blocco = blocks[blocks.length - 1];
                                 if(blocco.querySelector('.check-comunione')) blocco.querySelector('.check-comunione').checked = b.comunione || false;
                                 if(b.beneficiario) blocco.querySelector('.nome-beneficiario').value = b.beneficiario;
+                                if(b.provincia && blocco.querySelector('.provincia-bene')) blocco.querySelector('.provincia-bene').value = b.provincia;
                                 blocco.querySelector('.tipo-parentela-bene').value = b.parentela || 'coniuge_retta';
+                                
+                                if (blocco.querySelector('.check-riserva')) {
+                                    blocco.querySelector('.check-riserva').checked = b.riserva || false;
+                                    gestisciRiservaUsufrutto(blocco.querySelector('.check-riserva'));
+                                }
+
                                 blocco.querySelector('.cat-catastale-donazione').value = b.cat || 'A2';
                                 blocco.querySelector('.quota-num').value = b.quotaNum || 1;
                                 blocco.querySelector('.quota-den').value = b.quotaDen || 1;
+                                
                                 blocco.querySelector('.diritto-donato').value = b.diritto || 'piena';
                                 gestisciDiritto(blocco.querySelector('.diritto-donato'));
-                                if (b.eta) blocco.querySelector('.input-eta').value = b.eta;
+                                
+                                if (b.dataNascita) {
+                                    blocco.querySelector('.input-data-nascita').value = b.dataNascita;
+                                    ultimaDataNascitaInserita = b.dataNascita;
+                                    calcolaEtaDaData(blocco.querySelector('.input-data-nascita'));
+                                } else if (b.eta) {
+                                    blocco.querySelector('.input-eta').value = b.eta;
+                                    calcolaPercentualeDaEta(blocco.querySelector('.input-eta'));
+                                }
+                                
                                 if (b.percDiritto) blocco.querySelector('.perc-diritto').value = b.percDiritto;
                                 
                                 blocco.querySelector('.descrizione-bene').value = b.descrizione || '';
@@ -646,9 +703,10 @@
                                     blocco.querySelector('.valore-commerciale').value = b.valoreCommerciale || b.valoreFiscale || b.valore || '';
                                 }
                                 blocco.querySelector('.check-primacasa').checked = b.primaCasa || false;
+                                if(blocco.querySelector('.check-storico')) blocco.querySelector('.check-storico').checked = b.isStorico || false;
                                 if(blocco.querySelector('.check-ppc')) blocco.querySelector('.check-ppc').checked = b.isPPC || false;
                                 
-                                gestisciAgevolazioniDonazione(blocco.querySelector('.cat-catastale-donazione'), contatoreBeni);
+                                gestisciAgevolazioniDonazione(blocco.querySelector('.cat-catastale-donazione'));
                             } else if (b.tipo === 'azienda') {
                                 aggiungiAzienda();
                                 let blocks = document.querySelectorAll('.blocco-azienda');
@@ -677,6 +735,7 @@
                             let blocks = document.querySelectorAll('.riga-pregressa');
                             let blocco = blocks[blocks.length - 1];
                             if(p.beneficiario) blocco.querySelector('.nome-beneficiario').value = p.beneficiario;
+                            if(p.periodo) blocco.querySelector('.periodo-pregressa').value = p.periodo;
                             blocco.querySelector('.parentela-pregressa').value = p.parentela;
                             blocco.querySelector('.valore-pregressa').value = p.valore;
                         });
@@ -688,6 +747,7 @@
                             aggiungiSpesaExtra(); 
                             let blocks = document.querySelectorAll('.riga-spesa'); 
                             blocks[blocks.length - 1].querySelector('.nome-spesa').value = s.nome; 
+                            if(s.regime) blocks[blocks.length - 1].querySelector('.regime-spesa').value = s.regime;
                             blocks[blocks.length - 1].querySelector('.importo-spesa').value = s.importo; 
                         }); 
                     }
@@ -699,7 +759,6 @@
         }
     }
 
-    // --- SALVATAGGIO TESTO ---
     function salvaTesto() {
         let testo = "PREVENTIVO DONAZIONE\n======================================\n";
         testo += "Pratica: " + (document.getElementById('nomePratica').value || "Non specificata") + "\n";
@@ -740,7 +799,7 @@
         }
 
         if (document.getElementById('riepilogoContabile') && document.getElementById('riepilogoContabile').style.display === 'block') {
-            testo += "\n--------------------------------------\nRIEPILOGO CONTABILE PER FATTURAZIONE:\nImponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\nCassa Notariato (4%): \t" + document.getElementById('cont_cassa').innerText + "\nIVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\nAnticipazioni Esenti: \t" + document.getElementById('cont_esenti').innerText + "\n";
+            testo += "\n--------------------------------------\nRIEPILOGO CONTABILE PER FATTURAZIONE:\nOnorario Imponibile Netto: \t" + document.getElementById('cont_netto').innerText + "\nSpese Imponibili Nette: \t" + document.getElementById('cont_spese_imp').innerText + "\nCassa Notariato (4% su Onorario): \t" + document.getElementById('cont_cassa').innerText + "\nTotale IVA (22%): \t\t" + document.getElementById('cont_iva').innerText + "\nAnticipazioni Esenti (Art. 15): \t" + document.getElementById('cont_esenti').innerText + "\n";
         }
         
         let blob = new Blob([testo], { type: "text/plain;charset=utf-8" }); 
@@ -761,49 +820,29 @@
         if (items.length === 0) { alert("ATTENZIONE: Inserisci almeno un bene o azienda."); return; }
 
         scontoCorrenteEuro = 0;
-        
-        // --- CONTROLLO DUPLICATI PRIMA CASA SULLE PERTINENZE ---
         let controlloPrimaCasa = {};
-        let bloccoPerErrore = false;
-        let messaggioErrore = "";
+        let bloccoPerErrore = false; let messaggioErrore = "";
 
         items.forEach((item) => {
             if (item.classList.contains('blocco-immobile')) {
                 const nomeBen = item.querySelector('.nome-beneficiario').value.trim().toUpperCase() || "BENEFICIARIO 1";
-                const isPC = item.querySelector('.check-primacasa') && item.querySelector('.check-primacasa').checked;
+                const checkPC = item.querySelector('.check-primacasa');
                 
-                if (isPC) {
+                if (checkPC && checkPC.checked) {
                     const cat = item.querySelector('.cat-catastale-donazione').value;
-                    let tipoCat = cat;
-                    if (cat.startsWith('A')) tipoCat = 'A'; 
-                    
-                    if (!controlloPrimaCasa[nomeBen]) {
-                        controlloPrimaCasa[nomeBen] = {};
-                    }
-
+                    let tipoCat = cat.startsWith('A') ? 'A' : cat; 
+                    if (!controlloPrimaCasa[nomeBen]) { controlloPrimaCasa[nomeBen] = {}; }
                     if (controlloPrimaCasa[nomeBen][tipoCat]) {
                         bloccoPerErrore = true;
-                        if (tipoCat === 'A') {
-                            messaggioErrore = `ERRORE: Il beneficiario ${nomeBen} ha richiesto l'agevolazione Prima Casa su più di un'abitazione principale. La legge ne consente solo una.`;
-                        } else {
-                            messaggioErrore = `ERRORE: Il beneficiario ${nomeBen} ha richiesto l'agevolazione Prima Casa su più pertinenze della stessa categoria (${cat}). La legge consente al massimo una pertinenza per ogni categoria (C/2, C/6, C/7).`;
-                        }
-                    } else {
-                        controlloPrimaCasa[nomeBen][tipoCat] = true;
-                    }
+                        messaggioErrore = tipoCat === 'A' ? `ERRORE: ${nomeBen} ha più di un'abitazione principale (Prima Casa).` : `ERRORE: ${nomeBen} ha più pertinenze della stessa categoria (${cat}) in Prima Casa.`;
+                    } else { controlloPrimaCasa[nomeBen][tipoCat] = true; }
                 }
             }
         });
-
-        if (bloccoPerErrore) {
-            alert(messaggioErrore);
-            return; // Blocca il calcolo se ci sono doppioni illegali
-        }
-        // --------------------------------------------------------
+        if (bloccoPerErrore) { alert(messaggioErrore); return; }
 
         vaiAlloStep(3);
         const isHandicap = document.getElementById('checkHandicap').checked;
-        
         let gruppiDonazione = {};
 
         function inizializzaGruppoSeNuovo(nomeBeneficiario, chiaveParentela, idDonante = 1) {
@@ -812,34 +851,31 @@
                 let dati = getDatiParentela(chiaveParentela, isHandicap);
                 let nomePar = dati.nomeBreve;
                 if(idDonante === 2) nomePar += " (Co-Donante)";
-                
-                gruppiDonazione[key] = {
-                    beneficiario: nomeBeneficiario.toUpperCase(),
-                    nomeParentela: nomePar,
-                    franchigia: dati.franchigia,
-                    aliquota: dati.aliquota,
-                    valoreFiscaleTotale: 0,
-                    pregresse: 0
-                };
+                gruppiDonazione[key] = { beneficiario: nomeBeneficiario.toUpperCase(), nomeParentela: nomePar, franchigia: dati.franchigia, aliquota: dati.aliquota, valoreFiscaleTotale: 0, pregresse: 0 };
             }
             return key;
         }
 
         document.querySelectorAll('.riga-pregressa').forEach(p => {
-            let nomeBen = p.querySelector('.nome-beneficiario').value.trim() || "BENEFICIARIO 1";
-            let catParentela = p.querySelector('.parentela-pregressa').value;
-            let valStr = p.querySelector('.valore-pregressa').value.replace(/\./g, "").replace(",", ".");
-            
-            let key = inizializzaGruppoSeNuovo(nomeBen, catParentela, 1);
-            gruppiDonazione[key].pregresse += parseFloat(valStr) || 0;
+            let periodo = p.querySelector('.periodo-pregressa').value;
+            if (periodo === 'rilevante') {
+                let nomeBen = p.querySelector('.nome-beneficiario').value.trim() || "BENEFICIARIO 1";
+                let catParentela = p.querySelector('.parentela-pregressa').value;
+                let valStr = p.querySelector('.valore-pregressa').value.replace(/\./g, "").replace(",", ".");
+                let key = inizializzaGruppoSeNuovo(nomeBen, catParentela, 1);
+                gruppiDonazione[key].pregresse += parseFloat(valStr) || 0;
+            }
         });
 
         let totaleMassaGlobaleCommerciale = 0; 
         let hasImmobili = false;
-        let imponibileImmobiliOrdinariFiscale = 0;
-        let imponibilePPCFiscale = 0;
-        let hasImmobiliPrimaCasa = false;
         let riepilogoHTML = "";
+        
+        let ufficiConservatoria = {}; 
+        let globaleBaseOrdinaria = 0;
+        let globaleBasePPC = 0;
+        let globaleHasPrimaCasa = false;
+        let globaleHasStorico = false;
 
         items.forEach((item, index) => {
             const num = index + 1;
@@ -850,8 +886,7 @@
                 const valCommStr = item.querySelector('.valore-commerciale').value.replace(/\./g, "").replace(",", ".");
                 const valoreCommerciale = parseFloat(valCommStr) || 0;
                 totaleMassaGlobaleCommerciale += valoreCommerciale;
-                
-                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #34495e;">🏢 Azienda/Quote #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> - Valore Repertorio: <strong style="color: #d35400;">${formatEuro(valoreCommerciale)}</strong> <em style="color: #27ae60;">(Esente Imposte)</em></div>`;
+                riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #34495e;">🏢 Azienda #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> - Valore Repertorio: <strong style="color: #d35400;">${formatEuro(valoreCommerciale)}</strong></div>`;
             } 
             else {
                 const parentelaBene = item.querySelector('.tipo-parentela-bene').value;
@@ -859,27 +894,25 @@
                 const valoreFiscaleRaw = parseFloat(valFiscaleStr) || 0;
                 
                 let valoreCommerciale = valoreFiscaleRaw;
-                let isPPC = false;
-                let isIndiretta = false;
-                let isComunione = false;
+                let isPPC = false; let isIndiretta = false; let isComunione = false; let isStorico = false;
+                let consInput = "ND";
 
                 if (item.classList.contains('blocco-immobile')) {
                     const valCommStr = item.querySelector('.valore-commerciale').value.replace(/\./g, "").replace(",", ".");
                     valoreCommerciale = parseFloat(valCommStr) || valoreFiscaleRaw;
-                    let checkPPC = item.querySelector('.check-ppc');
-                    isPPC = checkPPC && checkPPC.checked;
-                    let checkComunione = item.querySelector('.check-comunione');
-                    isComunione = checkComunione && checkComunione.checked;
+                    isPPC = item.querySelector('.check-ppc') && item.querySelector('.check-ppc').checked;
+                    isStorico = item.querySelector('.check-storico') && item.querySelector('.check-storico').checked;
+                    isComunione = item.querySelector('.check-comunione') && item.querySelector('.check-comunione').checked;
+                    let cText = item.querySelector('.provincia-bene').value.trim().toUpperCase();
+                    consInput = cText !== "" ? cText : "ND";
                 } else if (item.classList.contains('blocco-denaro')) {
-                    let checkIndiretta = item.querySelector('.check-indiretta');
-                    isIndiretta = checkIndiretta && checkIndiretta.checked;
+                    isIndiretta = item.querySelector('.check-indiretta') && item.querySelector('.check-indiretta').checked;
                 }
 
                 totaleMassaGlobaleCommerciale += valoreCommerciale;
-                
-                let valoreFiscaleEffettivo = isIndiretta ? 0 : valoreFiscaleRaw;
+                let valoreFiscaleEffettivo = (isIndiretta || isStorico) ? 0 : valoreFiscaleRaw;
 
-                if (!isPPC && !isIndiretta && valoreFiscaleEffettivo > 0) {
+                if (!isPPC && valoreFiscaleEffettivo > 0) {
                     if (isComunione) {
                         let key1 = inizializzaGruppoSeNuovo(nomeBen, parentelaBene, 1);
                         let key2 = inizializzaGruppoSeNuovo(nomeBen, parentelaBene, 2);
@@ -891,51 +924,44 @@
                     }
                 }
 
-                let stringaValoriStampati = "";
-                if (valoreFiscaleRaw === valoreCommerciale) {
-                    stringaValoriStampati = `Valore: <strong>${formatEuro(valoreFiscaleRaw)}</strong>`;
-                } else {
-                    stringaValoriStampati = `Valore Fiscale: <strong>${formatEuro(valoreFiscaleRaw)}</strong> - Valore Commerciale: <strong style="color: #d35400;">${formatEuro(valoreCommerciale)}</strong>`;
-                }
+                let strVal = (valoreFiscaleRaw === valoreCommerciale) ? `Valore: <strong>${formatEuro(valoreFiscaleRaw)}</strong>` : `Val. Fiscale: <strong>${formatEuro(valoreFiscaleRaw)}</strong> - Val. Commerciale: <strong style="color: #d35400;">${formatEuro(valoreCommerciale)}</strong>`;
 
                 if (item.classList.contains('blocco-immobile')) {
                     hasImmobili = true;
-                    const isPC = item.querySelector('.check-primacasa') && item.querySelector('.check-primacasa').checked;
+                    if (consInput !== "ND") ufficiConservatoria[consInput] = true;
+
+                    const isPC = item.querySelector('.check-primacasa').checked;
                     const qNum = item.querySelector('.quota-num').value;
                     const qDen = item.querySelector('.quota-den').value;
                     const dirittoSelect = item.querySelector('.diritto-donato');
                     const nomeDiritto = dirittoSelect.options[dirittoSelect.selectedIndex].text;
-                    let stringaProvenienza = isComunione ? `2 Donanti Cointestatari` : getDatiParentela(parentelaBene, isHandicap).nomeBreve;
+                    let strProv = isComunione ? `2 Donanti` : getDatiParentela(parentelaBene, isHandicap).nomeBreve;
                     
-                    let stringaOggetto = `Quota ${qNum}/${qDen} di ${nomeDiritto}`;
-
                     if (isPPC) {
-                        imponibilePPCFiscale += valoreFiscaleEffettivo;
-                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🚜 Terreno P.P.C. #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${stringaProvenienza}) - Oggetto: ${stringaOggetto} <br>${stringaValoriStampati.replace('Valore Fiscale', '<span style="color: #27ae60;">Valore Fiscale Esente</span>')}</div>`;
+                        globaleBasePPC += valoreFiscaleRaw;
+                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🚜 Terreno P.P.C. [${consInput}]:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (${strProv}) - ${qNum}/${qDen} ${nomeDiritto} <br>${strVal}</div>`;
+                    } else if (isStorico) {
+                        globaleHasStorico = true;
+                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏛️ Immobile Storico [${consInput}]:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (${strProv}) - ${qNum}/${qDen} ${nomeDiritto} <br>${strVal} <em style="color: #8e44ad;">(Esente Donazione)</em></div>`;
                     } else if (isPC) {
-                        hasImmobiliPrimaCasa = true;
-                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (Prima Casa):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${stringaProvenienza}) - Oggetto: ${stringaOggetto} <br>${stringaValoriStampati.replace('Valore:', '<span style="color: #27ae60;">Valore:</span>').replace('Valore Fiscale:', '<span style="color: #27ae60;">Valore Fiscale:</span>')}</div>`;
+                        globaleHasPrimaCasa = true;
+                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Prima Casa [${consInput}]:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (${strProv}) - ${qNum}/${qDen} ${nomeDiritto} <br>${strVal}</div>`;
                     } else {
-                        imponibileImmobiliOrdinariFiscale += valoreFiscaleEffettivo;
-                        const catSelect = item.querySelector('.cat-catastale-donazione');
-                        const nomeCategoria = catSelect ? catSelect.options[catSelect.selectedIndex].text.split(" ")[0] : "Ordinario";
-                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile #${num} (${nomeCategoria}):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${stringaProvenienza}) - Oggetto: ${stringaOggetto} <br>${stringaValoriStampati}</div>`;
+                        globaleBaseOrdinaria += valoreFiscaleRaw;
+                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong>🏠 Immobile Ordinario [${consInput}]:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (${strProv}) - ${qNum}/${qDen} ${nomeDiritto} <br>${strVal}</div>`;
                     }
                 } else {
-                    let stringaProvenienza = getDatiParentela(parentelaBene, isHandicap).nomeBreve;
+                    let strProv = getDatiParentela(parentelaBene, isHandicap).nomeBreve;
                     if(isIndiretta) {
-                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro/Mobili #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${stringaProvenienza}) - Importo Repertorio: <strong>${formatEuro(valoreCommerciale)}</strong> <em style="color: #27ae60;">(Donazione Indiretta Esente)</em></div>`;
+                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro (Indiretto):</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (${strProv}) - <strong>${formatEuro(valoreCommerciale)}</strong></div>`;
                     } else {
-                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro/Mobili #${num}:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (Da: ${stringaProvenienza}) - Importo: <strong>${formatEuro(valoreFiscaleRaw)}</strong></div>`;
+                        riepilogoHTML += `<div style="font-size: 0.85rem; padding: 5px 0; border-bottom: 1px dashed #ccc;"><strong style="color: #b9770e;">💰 Denaro:</strong> ${desc} <br><strong>A: ${nomeBen}</strong> (${strProv}) - <strong>${formatEuro(valoreFiscaleRaw)}</strong></div>`;
                     }
                 }
             }
         });
 
-        // 1. Calcolo Imposta di Donazione
-        let totaleImpostaDonazione = 0;
-        let dettagliDonazioneHTML = "";
-
+        let totaleImpostaDonazione = 0; let dettagliDonazioneHTML = "";
         for (let key in gruppiDonazione) {
             let g = gruppiDonazione[key];
             if (g.valoreFiscaleTotale > 0) {
@@ -943,16 +969,8 @@
                 let imponibileNetto = Math.max(0, g.valoreFiscaleTotale - franchigiaResidua);
                 let impostaGruppo = imponibileNetto * g.aliquota;
                 totaleImpostaDonazione += impostaGruppo;
-                
                 let rigaPregresseHTML = g.pregresse > 0 ? `<br>Donazioni pregresse: <strong>${formatEuro(g.pregresse)}</strong> ➔ Franchigia Residua: ${formatEuro(franchigiaResidua)}` : '';
-
-                dettagliDonazioneHTML += `
-                    <div style="margin-top: 10px; padding-top: 5px; border-top: 1px dotted #ccc; font-size: 0.85rem;">
-                        <strong>A: ${g.beneficiario}</strong> (Da ${g.nomeParentela}): Nuova base imponibile <strong>${formatEuro(g.valoreFiscaleTotale)}</strong>
-                        ${rigaPregresseHTML}
-                        <br>Franchigia utilizzata: -${formatEuro(Math.min(g.valoreFiscaleTotale, franchigiaResidua))} ➔ Base Tassabile: <strong>${formatEuro(imponibileNetto)}</strong><br>
-                        <span style="color: #8e44ad;">Imposta dovuta: <strong>${formatEuro(impostaGruppo)}</strong></span>
-                    </div>`;
+                dettagliDonazioneHTML += `<div style="margin-top: 10px; padding-top: 5px; border-top: 1px dotted #ccc; font-size: 0.85rem;"><strong>A: ${g.beneficiario}</strong> (Da ${g.nomeParentela}): Nuova base <strong>${formatEuro(g.valoreFiscaleTotale)}</strong>${rigaPregresseHTML}<br>Franchigia utilizzata: -${formatEuro(Math.min(g.valoreFiscaleTotale, franchigiaResidua))} ➔ Tassabile: <strong>${formatEuro(imponibileNetto)}</strong><br><span style="color: #8e44ad;">Imposta: <strong>${formatEuro(impostaGruppo)}</strong></span></div>`;
             }
         }
 
@@ -960,55 +978,87 @@
         let impostaIpotecaria = 0;
         let impostaCatastale = 0;
 
-        if (hasImmobiliPrimaCasa) { impostaIpotecaria += 200; impostaCatastale += 200; }
-        
-        if (imponibilePPCFiscale > 0) {
-            impostaIpotecaria += 200; 
-            impostaCatastale += Math.max(200, imponibilePPCFiscale * 0.01); 
-        }
+        // Vettori temporanei per salvare i dettagli della somma (Punto 1)
+        let dettagliIpotecaria = [];
+        let dettagliCatastale = [];
 
-        if (imponibileImmobiliOrdinariFiscale > 0) {
-            impostaIpotecaria += Math.max(200, imponibileImmobiliOrdinariFiscale * 0.02);
-            impostaCatastale += Math.max(200, imponibileImmobiliOrdinariFiscale * 0.01);
+        // CALCOLO IMPOSTE GLOBALI SULL'ATTO CON SALVATAGGIO DEI DETTAGLI
+        if (globaleHasPrimaCasa) { 
+            impostaIpotecaria += 200; dettagliIpotecaria.push("200");
+            impostaCatastale += 200; dettagliCatastale.push("200");
+        }
+        if (globaleHasStorico) { 
+            impostaIpotecaria += 200; dettagliIpotecaria.push("200");
+            impostaCatastale += 200; dettagliCatastale.push("200");
+        }
+        if (globaleBasePPC > 0) { 
+            impostaIpotecaria += 200; dettagliIpotecaria.push("200");
+            let catPPC = Math.max(200, globaleBasePPC * 0.01);
+            impostaCatastale += catPPC; dettagliCatastale.push(formatNumberStr(catPPC));
+        }
+        if (globaleBaseOrdinaria > 0) {
+            let ipoOrd = Math.max(200, globaleBaseOrdinaria * 0.02);
+            impostaIpotecaria += ipoOrd; dettagliIpotecaria.push(formatNumberStr(ipoOrd));
+            let catOrd = Math.max(200, globaleBaseOrdinaria * 0.01);
+            impostaCatastale += catOrd; dettagliCatastale.push(formatNumberStr(catOrd));
         }
 
         let impostaBollo = hasImmobili ? 230 : 155;
-        let tassaTrascrizioneVoltura = hasImmobili ? 90 : 0;
+        
+        // Calcolo e dettaglio per la Tassa Ipotecaria (Moltiplicata per Conservatorie)
+        let numeroUffici = Object.keys(ufficiConservatoria).length;
+        if (numeroUffici === 0 && hasImmobili) numeroUffici = 1; // Fallback se dimenticano di inserire la conservatoria
+        
+        let tassaTrascrizioneVoltura = hasImmobili ? (numeroUffici * 90) : 0; 
+        let dettagliTrascrizione = hasImmobili ? Array(numeroUffici).fill("90") : [];
 
-        let totaleSpeseExtra = 0; let speseExtraHTML = ``;
+        // Costruzione delle scritte visive per i dettagli (Punto 2 e 3)
+        let stringaDettaglioIpo = dettagliIpotecaria.length > 1 ? ` <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: normal;">(${dettagliIpotecaria.join(" + ")})</span>` : "";
+        let stringaDettaglioCat = dettagliCatastale.length > 1 ? ` <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: normal;">(${dettagliCatastale.join(" + ")})</span>` : "";
+        let stringaDettaglioTras = dettagliTrascrizione.length > 1 ? ` <span style="font-size: 0.75rem; color: #7f8c8d; font-weight: normal;">(${dettagliTrascrizione.join(" + ")})</span>` : "";
+
+        let totaleSpeseEsenti = 0; baseImponibileSpese = 0; let speseExtraHTML = ``;
         document.querySelectorAll('.riga-spesa').forEach(s => {
-            let nome = s.querySelector('.nome-spesa').value || "Spesa accessoria";
+            let nome = s.querySelector('.nome-spesa').value || "Spesa";
             let importo = parseFloat(s.querySelector('.importo-spesa').value.replace(/\./g, "").replace(",", ".")) || 0;
-            if (importo > 0) { totaleSpeseExtra += importo; speseExtraHTML += `<tr><td style="padding: 4px 0; padding-left: 10px; font-size: 0.9rem; color: #555;">- ${nome}</td><td style="text-align: right; font-size: 0.9rem;">${formatEuro(importo)}</td></tr>`; }
+            let regime = s.querySelector('.regime-spesa').value;
+            
+            if (importo > 0) {
+                if(regime === 'esente') {
+                    totaleSpeseEsenti += importo;
+                    speseExtraHTML += `<tr><td style="padding: 4px 0; padding-left: 10px; font-size: 0.9rem; color: #555;">- ${nome} (Art.15)</td><td style="text-align: right; font-size: 0.9rem;">${formatEuro(importo)}</td></tr>`;
+                } else {
+                    baseImponibileSpese += importo;
+                    speseExtraHTML += `<tr><td style="padding: 4px 0; padding-left: 10px; font-size: 0.9rem; color: #2980b9;">- ${nome} (Imponibile Lorda)</td><td style="text-align: right; font-size: 0.9rem;">${formatEuro(importo * 1.22)}</td></tr>`;
+                }
+            }
         });
-        if (totaleSpeseExtra > 0) { speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Spese Vive Esenti</td></tr>` + speseExtraHTML; }
+        if (totaleSpeseEsenti > 0 || baseImponibileSpese > 0) { speseExtraHTML = `<tr><td colspan="2" style="padding: 15px 5px 5px 0; font-weight: bold; font-size: 1.1rem; color: #2c3e50;">Spese Accessorie</td></tr>` + speseExtraHTML; }
 
         const scaglione = PUB.find(x => totaleMassaGlobaleCommerciale <= x.max) || PUB[PUB.length - 1];
         const scaglionePrivato = PRIV.find(x => totaleMassaGlobaleCommerciale <= x.max) || PRIV[PRIV.length - 1];
-        
         onorarioConsigliatoRepertorio = scaglione.h["100%"] || 0;
-
+        
         const calcCassa = (rep, sc) => Math.round(rep * sc.c * 100) / 100;
         const calcArch = (rep, cassa) => (Math.round(rep * 0.10 * 100) / 100) + (cassa + Math.round(rep * 0.04 * 100) / 100 + Math.round(rep * 0.002 * 100) / 100 + Math.round(rep * 0.06 * 100) / 100) * 1.22;
         
         const totContributiPUB = calcArch(onorarioConsigliatoRepertorio, calcCassa(onorarioConsigliatoRepertorio, scaglione));
         const totContributiPRIV = calcArch(scaglionePrivato.h["100%"] || 0, calcCassa(scaglionePrivato.h["100%"] || 0, scaglionePrivato));
 
-        const totaleImposteFisseBase = totaleImpostaDonazione + impostaRegistro + impostaIpotecaria + impostaCatastale + impostaBollo + tassaTrascrizioneVoltura + totaleSpeseExtra;
+        const totaleImposteFisseBase = totaleImpostaDonazione + impostaRegistro + impostaIpotecaria + impostaCatastale + impostaBollo + tassaTrascrizioneVoltura + totaleSpeseEsenti + (baseImponibileSpese * 1.22);
         baseTassePerSconto = totaleImposteFisseBase; 
 
         document.getElementById('risultatoPreventivo').innerHTML = `
             <div style="text-align: center; border-bottom: 2px solid #8e44ad; padding-bottom: 10px; margin-bottom: 20px;">
                 <h1 style="font-size: 1.8rem; color: #8e44ad; margin: 0;">PREVENTIVO DELLO STUDIO NOTARILE</h1>
                 <h2 style="font-size: 1.1rem; color: #34495e; margin: 5px 0;">Cliente/Pratica: ${document.getElementById('nomePratica').value || "Senza riferimento"}</h2>
-                <p style="font-size: 0.85rem; color: #7f8c8d; margin: 5px 0 0 0;">Data: ${new Date().toLocaleDateString('it-IT')} da: ${document.getElementById('nomeImpiegato').value || "Operatore"}</p>
             </div>
 
-            <h3 style="color: #9b59b6; margin-top: 0;">A. RIEPILOGO ASSET DONATI - Massa Repertorio: <span style="color: #d35400;">${formatEuro(totaleMassaGlobaleCommerciale)}</span></h3>
+            <h3 style="color: #9b59b6; margin-top: 0;">A. RIEPILOGO ASSET - Massa Repertorio: <span style="color: #d35400;">${formatEuro(totaleMassaGlobaleCommerciale)}</span></h3>
             <div style="background: #fafafa; padding: 10px; border: 1px solid #ddd; margin-bottom: 15px;">
                 ${riepilogoHTML}
                 <div id="riepilogoImpostaDonazione" style="background: #f4ecf7; padding: 10px; border-radius: 6px; margin-top: 15px; ${totaleImpostaDonazione === 0 && !dettagliDonazioneHTML ? 'display:none;' : ''}">
-                    <div style="font-weight: bold; color: #8e44ad; font-size: 0.95rem;">Riepilogo Imposta di Donazione per Beneficiario (Base Fiscale):</div>
+                    <div style="font-weight: bold; color: #8e44ad; font-size: 0.95rem;">Riepilogo Imposta di Donazione per Beneficiario:</div>
                     ${dettagliDonazioneHTML}
                     <div style="margin-top: 10px; padding-top: 5px; border-top: 2px solid #8e44ad; font-weight: bold; text-align: right; color: #8e44ad;">
                         Totale Imposta Donazione: ${formatEuro(totaleImpostaDonazione)}
@@ -1018,31 +1068,32 @@
 
             <table style="width: 100%; text-align: left; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem;">
                 <tr style="border-bottom: 2px solid #333;"><th>Tasse ed Imposte (Calcolate su Atto Unico)</th><th style="text-align: right;">Importo</th></tr>
-                
-                <tr><td style="padding: 5px 0; color: #8e44ad;"><strong>Imposta di Donazione (Vedi calcolo sopra)</strong></td><td style="text-align: right; color: #8e44ad;"><strong>${formatEuro(totaleImpostaDonazione)}</strong></td></tr>
+                <tr><td style="padding: 5px 0; color: #8e44ad;"><strong>Imposta di Donazione (Vedi calcolo)</strong></td><td style="text-align: right; color: #8e44ad;"><strong>${formatEuro(totaleImpostaDonazione)}</strong></td></tr>
                 <tr><td style="padding: 5px 0;">Imposta di Registro (Fissa)</td><td style="text-align: right;">${formatEuro(impostaRegistro)}</td></tr>
                 
                 ${hasImmobili ? `
-                <tr><td style="padding: 5px 0;">Imposta Ipotecaria</td><td style="text-align: right;">${formatEuro(impostaIpotecaria)}</td></tr>
-                <tr><td style="padding: 5px 0;">Imposta Catastale</td><td style="text-align: right;">${formatEuro(impostaCatastale)}</td></tr>
+                <tr><td style="padding: 5px 0;">Imposta Ipotecaria (Atto Unico)${stringaDettaglioIpo}</td><td style="text-align: right;">${formatEuro(impostaIpotecaria)}</td></tr>
+                <tr><td style="padding: 5px 0;">Imposta Catastale (Atto Unico)${stringaDettaglioCat}</td><td style="text-align: right;">${formatEuro(impostaCatastale)}</td></tr>
                 ` : ''}
 
                 <tr><td style="padding: 5px 0;">Imposta di Bollo</td><td style="text-align: right;">${formatEuro(impostaBollo)}</td></tr>
-                ${hasImmobili ? `<tr><td style="padding: 5px 0;">Tassa Ipotecaria fissa (Trascrizione e Voltura)</td><td style="text-align: right;">${formatEuro(tassaTrascrizioneVoltura)}</td></tr>` : ''}
+                
+                ${hasImmobili ? `
+                <tr><td style="padding: 5px 0;">Tassa Ipotecaria fissa (Trascrizione/Voltura)${stringaDettaglioTras}</td><td style="text-align: right;">${formatEuro(tassaTrascrizioneVoltura)}</td></tr>
+                ` : ''}
 
                 ${speseExtraHTML}
-                
                 <tr>
                     <td style="padding: 5px 0; padding-left: 10px; color: #555;">
-                        - Tassa Archivio Notarile (Calcolata sulla Massa: ${formatEuro(totaleMassaGlobaleCommerciale)})
-                        <select id="tipoAttoCV" onchange="cambiaTipoAtto(this, 'tassaArchivioInput', ${totContributiPUB}, ${totContributiPRIV}, ${totaleImposteFisseBase})" style="width: auto; padding: 2px 5px; font-size: 0.8rem; margin-left: 10px; border-radius: 4px; border: 1px solid #ccc; background: #fdf2e9;">
+                        - Tassa Archivio Notarile (Calcolata sulla Massa)
+                        <select id="tipoAttoCV" onchange="cambiaTipoAtto(this, 'tassaArchivioInput', ${totContributiPUB}, ${totContributiPRIV}, ${totaleImposteFisseBase})" style="width: auto; padding: 2px 5px; font-size: 0.8rem; margin-left: 10px; border-radius: 4px;">
                             <option value="pubblico">Atto Pubblico</option><option value="privato">Scrittura Privata</option>
                         </select>
                     </td>
                     <td style="text-align: right;">
                         <div style="display: flex; justify-content: flex-end; align-items: center; gap: 5px;">
                             <span style="font-weight: bold; color: #555;">€</span>
-                            <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" value="${formatNumberStr(totContributiPUB)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
+                            <input type="text" id="tassaArchivioInput" class="input-valuta" style="text-align: right; width: 100px; padding: 5px;" value="${formatNumberStr(totContributiPUB)}" autocomplete="off" oninput="formattaValuta(this)" onblur="formattaDecimale(this); aggiornaTotaliDinamici(${totaleImposteFisseBase})">
                         </div>
                     </td>
                 </tr>
@@ -1074,28 +1125,24 @@
                         <input type="text" id="arrotondaInput" class="input-valuta" style="text-align: right; border-color: #27ae60; background: #eafaf1;" oninput="formattaValuta(this); calcolaScontoDinamico('totale')" onblur="formattaDecimale(this)" autocomplete="off">
                     </div>
                 </div>
-                <div id="avviso-sconto" style="font-size: 0.8rem; color: #e74c3c; margin-top: 5px; display: none;">⚠️ Lo sconto inserito è superiore all'Onorario. Le Tasse sono fisse e non possono essere scontate.</div>
             </div>
             
             <div id="totaleFinaleBox" style="text-align: right; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-top: 25px;">
-                
                 <div id="rigaScontoStampa" style="display: none; justify-content: flex-end; font-size: 1.1rem; color: #f1c40f; margin-bottom: 10px;">
-                    <span>Sconto (cliente dello studio) <span id="lblScontoPerc"></span>: </span>
-                    <span id="valoreScontoStampa" style="margin-left: 10px; font-weight: bold;">- € 0,00</span>
+                    <span>Sconto <span id="lblScontoPerc"></span>: </span><span id="valoreScontoStampa" style="margin-left: 10px; font-weight: bold;">- € 0,00</span>
                 </div>
-
                 <h2 style="margin: 0; display: flex; justify-content: flex-end; align-items: baseline; font-size: 1.4rem;">
-                    <span>TOTALE PREVENTIVO: </span><span id="valoreTotaleStampa" class="valore-totale-stampa" style="margin-left: 10px;">€ 0,00</span>
-                    <span class="linea-stampa-vuota"><span style="font-size: 1.2rem; font-weight: bold; margin-right: 5px; color: #000;">€</span></span>
+                    <span>TOTALE PREVENTIVO: </span><span id="valoreTotaleStampa" style="margin-left: 10px;">€ 0,00</span>
                 </h2>
                 <div id="dettaglioIva" style="font-size: 0.85rem; color: #bdc3c7; margin-top: 5px;">di cui IVA 22% scorporata: € 0,00</div>
             </div>
 
             <div id="riepilogoContabile" style="display: none; margin-top: 60px; padding-top: 15px; border-top: 1px dashed #bdc3c7; font-size: 0.65rem; color: #bdc3c7; text-align: center;">
                 <strong style="color: #95a5a6; text-transform: uppercase;">Riepilogo Contabile per Fatturazione</strong><br>
-                Imponibile Netto: <span id="cont_netto">€ 0,00</span> | 
-                Cassa Notariato (4%): <span id="cont_cassa">€ 0,00</span> | 
-                IVA (22%): <span id="cont_iva">€ 0,00</span> | 
+                Onorario Imponibile Netto: <span id="cont_netto">€ 0,00</span> | 
+                Spese Imponibili Nette: <span id="cont_spese_imp">€ 0,00</span> | 
+                Cassa Notariato (4% su Onorario): <span id="cont_cassa">€ 0,00</span> | 
+                Totale IVA (22%): <span id="cont_iva">€ 0,00</span> | 
                 Anticipazioni Esenti (Art. 15): <span id="cont_esenti">€ 0,00</span>
             </div>
         `;
@@ -1103,100 +1150,69 @@
     }
 
     function pulisciSconti() {
-        document.getElementById('scontoPercInput').value = "";
-        document.getElementById('scontoEuroInput').value = "";
-        document.getElementById('arrotondaInput').value = "";
-        scontoCorrenteEuro = 0;
-        document.getElementById('rigaScontoStampa').style.display = 'none';
-        document.getElementById('avviso-sconto').style.display = 'none';
+        document.getElementById('scontoPercInput').value = ""; document.getElementById('scontoEuroInput').value = ""; document.getElementById('arrotondaInput').value = "";
+        scontoCorrenteEuro = 0; document.getElementById('rigaScontoStampa').style.display = 'none';
     }
 
     function calcolaScontoDinamico(origine) {
         const inputOnorario = document.getElementById('onorarioLibero');
         let onorario = inputOnorario && inputOnorario.value ? parseFloat(inputOnorario.value.replace(/\./g, "").replace(",", ".")) : 0;
-        
         const inputArchivio = document.getElementById('tassaArchivioInput');
         let tArchivio = inputArchivio && inputArchivio.value ? parseFloat(inputArchivio.value.replace(/\./g, "").replace(",", ".")) : 0;
         let totTasse = baseTassePerSconto + tArchivio;
 
         if (onorario === 0) return;
 
-        let inputPerc = document.getElementById('scontoPercInput');
-        let inputEuro = document.getElementById('scontoEuroInput');
-        let inputArrot = document.getElementById('arrotondaInput');
-        let avviso = document.getElementById('avviso-sconto');
-
-        let percVal = parseFloat(inputPerc.value.replace(",", ".")) || 0;
-        let euroVal = parseFloat(inputEuro.value.replace(/\./g, "").replace(",", ".")) || 0;
-        let arrotVal = parseFloat(inputArrot.value.replace(/\./g, "").replace(",", ".")) || 0;
+        let inputPerc = document.getElementById('scontoPercInput'); let inputEuro = document.getElementById('scontoEuroInput'); let inputArrot = document.getElementById('arrotondaInput');
+        let percVal = parseFloat(inputPerc.value.replace(",", ".")) || 0; let euroVal = parseFloat(inputEuro.value.replace(/\./g, "").replace(",", ".")) || 0; let arrotVal = parseFloat(inputArrot.value.replace(/\./g, "").replace(",", ".")) || 0;
 
         let totLordoNaturale = totTasse + onorario;
-        avviso.style.display = 'none';
 
-        if (origine === 'perc') {
-            euroVal = onorario * (percVal / 100);
-            inputEuro.value = formatNumberStr(euroVal);
-            inputArrot.value = formatNumberStr(totLordoNaturale - euroVal);
-        } else if (origine === 'euro') {
-            percVal = (euroVal / onorario) * 100;
-            inputPerc.value = percVal.toFixed(2).replace(".", ",");
-            inputArrot.value = formatNumberStr(totLordoNaturale - euroVal);
-        } else if (origine === 'totale') {
-            euroVal = totLordoNaturale - arrotVal;
-            if (euroVal < 0) euroVal = 0; 
-            percVal = (euroVal / onorario) * 100;
-            inputPerc.value = percVal.toFixed(2).replace(".", ",");
-            inputEuro.value = formatNumberStr(euroVal);
-        }
+        if (origine === 'perc') { euroVal = onorario * (percVal / 100); inputEuro.value = formatNumberStr(euroVal); inputArrot.value = formatNumberStr(totLordoNaturale - euroVal); } 
+        else if (origine === 'euro') { percVal = (euroVal / onorario) * 100; inputPerc.value = percVal.toFixed(2).replace(".", ","); inputArrot.value = formatNumberStr(totLordoNaturale - euroVal); } 
+        else if (origine === 'totale') { euroVal = totLordoNaturale - arrotVal; if (euroVal < 0) euroVal = 0; percVal = (euroVal / onorario) * 100; inputPerc.value = percVal.toFixed(2).replace(".", ","); inputEuro.value = formatNumberStr(euroVal); }
 
-        if (euroVal > onorario) {
-            avviso.style.display = 'block';
-            euroVal = onorario; 
-        }
-
+        if (euroVal > onorario) { euroVal = onorario; }
         scontoCorrenteEuro = euroVal;
 
         let rigaStampa = document.getElementById('rigaScontoStampa');
-        if (scontoCorrenteEuro > 0) {
-            rigaStampa.style.display = 'flex';
-            document.getElementById('valoreScontoStampa').innerText = "- " + formatEuro(scontoCorrenteEuro);
-            document.getElementById('lblScontoPerc').innerText = percVal > 0 ? percVal.toFixed(2).replace(".", ",") + "%" : "";
-        } else {
-            rigaStampa.style.display = 'none';
-        }
-
+        if (scontoCorrenteEuro > 0) { rigaStampa.style.display = 'flex'; document.getElementById('valoreScontoStampa').innerText = "- " + formatEuro(scontoCorrenteEuro); document.getElementById('lblScontoPerc').innerText = percVal > 0 ? percVal.toFixed(2).replace(".", ",") + "%" : ""; } 
+        else { rigaStampa.style.display = 'none'; }
         aggiornaTotaliDinamici(baseTassePerSconto);
     }
 
     function aggiornaTotaliDinamici(baseTasse) {
         const inputArchivio = document.getElementById('tassaArchivioInput');
-        let totTasse = baseTasse + (inputArchivio && inputArchivio.value ? parseFloat(inputArchivio.value.replace(/\./g, "").replace(",", ".")) : 0);
+        let tArchivio = inputArchivio && inputArchivio.value ? parseFloat(inputArchivio.value.replace(/\./g, "").replace(",", ".")) : 0;
+        let totTasse = baseTasse + tArchivio;
         document.getElementById('totaleTasseSpeseLBL').innerText = formatEuro(totTasse);
 
         const inputOnorario = document.getElementById('onorarioLibero');
         let onorarioBase = inputOnorario && inputOnorario.value ? parseFloat(inputOnorario.value.replace(/\./g, "").replace(",", ".")) : 0;
-        
         let onorarioScontato = Math.max(0, onorarioBase - scontoCorrenteEuro);
+        
         let granTotale = totTasse + onorarioScontato;
 
-        let imponibileNetto = onorarioScontato / 1.2688;
-        let cassaNotariato = imponibileNetto * 0.04;
-        let ivaReale = (imponibileNetto + cassaNotariato) * 0.22;
+        let imponibileNettoOnorario = onorarioScontato / 1.2688;
+        let cassaNotariato = imponibileNettoOnorario * 0.04;
+        let ivaOnorario = (imponibileNettoOnorario + cassaNotariato) * 0.22;
+        let ivaSpese = baseImponibileSpese * 0.22;
+        let ivaTotale = ivaOnorario + ivaSpese;
+        let totaleEsenti = totTasse - (baseImponibileSpese * 1.22); 
 
         document.getElementById('valoreTotaleStampa').innerText = formatEuro(granTotale);
-        document.getElementById('dettaglioIva').innerText = "di cui IVA 22% scorporata dall'onorario effettivo: " + formatEuro(ivaReale);
+        document.getElementById('dettaglioIva').innerText = "di cui IVA 22% scorporata: " + formatEuro(ivaTotale);
 
         let rc = document.getElementById('riepilogoContabile');
         if (rc) {
-            if (onorarioScontato > 0) {
+            if (onorarioScontato > 0 || baseImponibileSpese > 0) {
                 rc.style.display = 'block';
-                document.getElementById('cont_netto').innerText = formatEuro(imponibileNetto);
+                document.getElementById('cont_netto').innerText = formatEuro(imponibileNettoOnorario);
+                document.getElementById('cont_spese_imp').innerText = formatEuro(baseImponibileSpese);
                 document.getElementById('cont_cassa').innerText = formatEuro(cassaNotariato);
-                document.getElementById('cont_iva').innerText = formatEuro(ivaReale);
-                document.getElementById('cont_esenti').innerText = formatEuro(totTasse);
-            } else {
-                rc.style.display = 'none';
-            }
+                document.getElementById('cont_iva').innerText = formatEuro(ivaTotale);
+                document.getElementById('cont_esenti').innerText = formatEuro(totaleEsenti);
+            } else { rc.style.display = 'none'; }
         }
 
         if (onorarioBase === 0) document.body.classList.add('onorario-vuoto'); 
